@@ -3,13 +3,15 @@
 import Link from 'next/link';
 import { Wallet, Wrench, Bot, Zap, Shield, Coins } from 'lucide-react';
 import AnimatedBackground from '@/components/AnimatedBackground';
+import Navbar from '@/components/Navbar';
 
 export default function Home() {
   return (
     <div className="min-h-screen relative">
       <AnimatedBackground />
+      <Navbar />
       {/* Hero Section */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-16 relative z-10">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-36 pb-16 relative z-10">
         <div className="text-center">
           <div className="flex justify-center mb-6">
             <div className="bg-white/30 backdrop-blur-md p-4 rounded-2xl shadow-2xl border border-white/20">

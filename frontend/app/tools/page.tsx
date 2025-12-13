@@ -1,23 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import {
-  Container,
-  Box,
-  Card,
-  CardContent,
-  Typography,
-  Grid,
-  Chip,
-  Button,
-  TextField,
-  InputAdornment,
-  CircularProgress,
-  Alert,
-} from '@mui/material';
-import { Search, Wrench, DollarSign, User, CheckCircle, Clock } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { Search, Wrench, DollarSign, CheckCircle, Clock, AlertCircle, ExternalLink, Loader2 } from 'lucide-react';
+import Navbar from '@/components/Navbar';
 import api from '@/lib/api';
-import { getStoredUser } from '@/lib/auth';
 
 interface Tool {
   id: number;
@@ -33,13 +20,12 @@ interface Tool {
 }
 
 export default function ToolsPage() {
+  const router = useRouter();
   const [tools, setTools] = useState<Tool[]>([]);
   const [filteredTools, setFilteredTools] = useState<Tool[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
-  const [paymentLoading, setPaymentLoading] = useState<number | null>(null);
   const [error, setError] = useState('');
-  const user = getStoredUser();
 
   useEffect(() => {
     fetchTools();
@@ -60,191 +46,187 @@ export default function ToolsPage() {
 
   const fetchTools = async () => {
     try {
-      const response = await api.get('/api/tools/?approved_only=true');
-      setTools(response.data);
-      setFilteredTools(response.data);
-    } catch (err) {
-      console.error('Failed to fetch tools:', err);
+      const response = await api.get('/api/tools');
+      // Only show approved and active tools
+      const approvedTools = response.data.filter((t: Tool) => t.approved && t.active);
+      setTools(approvedTools);
+      setFilteredTools(approvedTools);
+    } catch (error) {
+      console.error('Error fetching tools:', error);
+      setError('Failed to load tools');
     } finally {
       setLoading(false);
     }
   };
 
-  const handlePayAndUse = async (toolId: number) => {
-    setPaymentLoading(toolId);
-    setError('');
-
-    try {
-      const response = await api.post(`/api/payments/pay/${toolId}`);
-      alert(`Payment successful! Transaction: ${response.data.tx_hash}`);
-    } catch (err: any) {
-      setError(err.response?.data?.detail || 'Payment failed');
-    } finally {
-      setPaymentLoading(null);
-    }
+  const getMethodColor = (method: string) => {
+    const colors: Record<string, string> = {
+      GET: 'bg-green-500/20 text-green-300 border-green-500/30',
+      POST: 'bg-blue-500/20 text-blue-300 border-blue-500/30',
+      PUT: 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30',
+      DELETE: 'bg-red-500/20 text-red-300 border-red-500/30',
+    };
+    return colors[method] || 'bg-gray-500/20 text-gray-300 border-gray-500/30';
   };
 
   if (loading) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="80vh">
-        <CircularProgress />
-      </Box>
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-indigo-900 to-purple-900">
+        <Navbar />
+        <div className="flex items-center justify-center h-screen">
+          <Loader2 className="h-8 w-8 text-white animate-spin" />
+        </div>
+      </div>
     );
   }
 
   return (
-    <Container maxWidth="xl" sx={{ mt: 4, mb: 4 }}>
-      <Box mb={4}>
-        <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-          <Box display="flex" alignItems="center">
-            <Wrench size={32} color="#667eea" />
-            <Typography variant="h4" fontWeight="bold" sx={{ ml: 2 }}>
-              Tool Marketplace
-            </Typography>
-          </Box>
-          <Button
-            variant="contained"
-            href="/create-tool"
-            sx={{
-              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-              '&:hover': {
-                background: 'linear-gradient(135deg, #5568d3 0%, #6a3d8f 100%)',
-              },
-            }}
-          >
-            Create Tool
-          </Button>
-        </Box>
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-indigo-900 to-purple-900">
+      <Navbar />
+      
+      <div className="pt-24 pb-16 px-6">
+        <div className="max-w-7xl mx-auto">
+          {/* Header */}
+          <div className="mb-8">
+            <h1 className="text-4xl font-bold text-white mb-2">Browse Tools</h1>
+            <p className="text-gray-400">Discover and use APIs for your AI agents</p>
+          </div>
 
-        <TextField
-          fullWidth
-          placeholder="Search tools by name or description..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <Search size={20} />
-              </InputAdornment>
-            ),
-          }}
-          sx={{ maxWidth: 600 }}
-        />
-      </Box>
+          {/* Search */}
+          <div className="mb-8">
+            <div className="relative">
+              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search tools by name or description..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full bg-white/10 border border-white/20 rounded-xl pl-12 pr-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent backdrop-blur-xl"
+              />
+            </div>
+          </div>
 
-      {error && (
-        <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError('')}>
-          {error}
-        </Alert>
-      )}
+          {/* Error Message */}
+          {error && (
+            <div className="mb-8 bg-red-500/20 border border-red-500/30 rounded-lg p-4 flex items-start gap-3">
+              <AlertCircle className="h-5 w-5 text-red-400 flex-shrink-0 mt-0.5" />
+              <p className="text-red-300">{error}</p>
+            </div>
+          )}
 
-      {filteredTools.length === 0 ? (
-        <Card>
-          <CardContent sx={{ py: 8, textAlign: 'center' }}>
-            <Wrench size={64} color="#ccc" style={{ marginBottom: 16 }} />
-            <Typography variant="h6" color="text.secondary" gutterBottom>
-              No tools found
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              {searchQuery
-                ? 'Try adjusting your search query'
-                : 'Be the first to create a tool!'}
-            </Typography>
-          </CardContent>
-        </Card>
-      ) : (
-        <Grid container spacing={3}>
-          {filteredTools.map((tool) => (
-            <Grid item xs={12} md={6} lg={4} key={tool.id}>
-              <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-                <CardContent sx={{ flexGrow: 1 }}>
-                  <Box display="flex" justifyContent="space-between" alignItems="start" mb={2}>
-                    <Typography variant="h6" fontWeight="bold">
-                      {tool.name}
-                    </Typography>
-                    {tool.approved ? (
-                      <Chip
-                        icon={<CheckCircle size={14} />}
-                        label="Approved"
-                        color="success"
-                        size="small"
-                      />
-                    ) : (
-                      <Chip
-                        icon={<Clock size={14} />}
-                        label="Pending"
-                        color="warning"
-                        size="small"
-                      />
-                    )}
-                  </Box>
+          {/* Tools Grid */}
+          {filteredTools.length === 0 ? (
+            <div className="text-center py-16">
+              <div className="bg-white/5 backdrop-blur-xl rounded-2xl p-12 border border-white/10">
+                <Wrench className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                <h2 className="text-2xl font-bold text-white mb-2">No Tools Found</h2>
+                <p className="text-gray-400 mb-6">
+                  {searchQuery
+                    ? 'Try adjusting your search query'
+                    : 'No approved tools available yet'}
+                </p>
+                {!searchQuery && (
+                  <button
+                    onClick={() => router.push('/create-tool')}
+                    className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-6 py-3 rounded-lg font-semibold transition-all"
+                  >
+                    Create First Tool
+                  </button>
+                )}
+              </div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredTools.map((tool) => (
+                <div
+                  key={tool.id}
+                  className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl p-6 hover:bg-white/[0.15] transition-all shadow-lg hover:shadow-xl group"
+                >
+                  {/* Tool Header */}
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="bg-gradient-to-br from-indigo-500 to-purple-600 p-3 rounded-xl group-hover:scale-110 transition-transform">
+                      <Wrench className="h-6 w-6 text-white" />
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <CheckCircle className="h-4 w-4 text-green-400" />
+                      <span className="text-xs text-green-400 font-semibold">Approved</span>
+                    </div>
+                  </div>
 
-                  <Typography variant="body2" color="text.secondary" sx={{ mb: 2, minHeight: 60 }}>
-                    {tool.description}
-                  </Typography>
+                  {/* Tool Name */}
+                  <h3 className="text-xl font-bold text-white mb-2">{tool.name}</h3>
+                  
+                  {/* Tool Description */}
+                  <p className="text-gray-400 text-sm mb-4 line-clamp-3">{tool.description}</p>
 
-                  <Box sx={{ mb: 2 }}>
-                    <Chip label={tool.api_method} size="small" sx={{ mr: 1 }} />
-                    <Typography
-                      variant="caption"
-                      color="text.secondary"
-                      sx={{
-                        display: 'inline-block',
-                        fontFamily: 'monospace',
-                        bgcolor: 'grey.100',
-                        px: 1,
-                        py: 0.5,
-                        borderRadius: 1,
-                      }}
-                    >
-                      {tool.api_url.length > 40
-                        ? tool.api_url.substring(0, 40) + '...'
-                        : tool.api_url}
-                    </Typography>
-                  </Box>
-
-                  <Box display="flex" justifyContent="space-between" alignItems="center" mt={2}>
-                    <Box display="flex" alignItems="center">
-                      <DollarSign size={20} color="#10b981" />
-                      <Typography variant="h6" fontWeight="bold" color="success.main">
-                        {tool.price_mnee.toFixed(2)} MNEE
-                      </Typography>
-                    </Box>
-
-                    {user && tool.owner_id !== user.id ? (
-                      <Button
-                        variant="contained"
-                        size="small"
-                        onClick={() => handlePayAndUse(tool.id)}
-                        disabled={paymentLoading === tool.id}
-                        sx={{
-                          background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-                          '&:hover': {
-                            background: 'linear-gradient(135deg, #059669 0%, #047857 100%)',
-                          },
-                        }}
+                  {/* API Details */}
+                  <div className="space-y-2 mb-4">
+                    <div className="flex items-center gap-2">
+                      <span
+                        className={`px-2 py-1 rounded-md text-xs font-semibold border ${getMethodColor(
+                          tool.api_method
+                        )}`}
                       >
-                        {paymentLoading === tool.id ? (
-                          <CircularProgress size={20} color="inherit" />
-                        ) : (
-                          'Pay & Use'
-                        )}
-                      </Button>
-                    ) : (
-                      <Chip
-                        icon={<User size={14} />}
-                        label="Your Tool"
-                        size="small"
-                        color="primary"
-                      />
-                    )}
-                  </Box>
-                </CardContent>
-              </Card>
-            </Grid>
-          ))}
-        </Grid>
-      )}
-    </Container>
+                        {tool.api_method}
+                      </span>
+                      <span className="text-xs text-gray-400 truncate">{tool.api_url}</span>
+                    </div>
+                  </div>
+
+                  {/* Price */}
+                  <div className="flex items-center justify-between pt-4 border-t border-white/10">
+                    <div className="flex items-center gap-2">
+                      <DollarSign className="h-5 w-5 text-yellow-400" />
+                      <span className="text-lg font-bold text-white">{tool.price_mnee}</span>
+                      <span className="text-sm text-gray-400">MNEE</span>
+                    </div>
+                    <button
+                      onClick={() => router.push('/ai-agent')}
+                      className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-all flex items-center gap-2"
+                    >
+                      Use Tool
+                      <ExternalLink className="h-4 w-4" />
+                    </button>
+                  </div>
+
+                  {/* Created Date */}
+                  <div className="flex items-center gap-2 mt-3 text-xs text-gray-500">
+                    <Clock className="h-3 w-3" />
+                    <span>Created {new Date(tool.created_at).toLocaleDateString()}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Stats Footer */}
+          <div className="mt-12 bg-white/5 backdrop-blur-xl rounded-xl p-6 border border-white/10">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
+              <div>
+                <p className="text-3xl font-bold text-white mb-1">{filteredTools.length}</p>
+                <p className="text-gray-400 text-sm">Available Tools</p>
+              </div>
+              <div>
+                <p className="text-3xl font-bold text-white mb-1">
+                  {filteredTools.reduce((sum, tool) => sum + tool.price_mnee, 0).toFixed(2)}
+                </p>
+                <p className="text-gray-400 text-sm">Total MNEE Value</p>
+              </div>
+              <div>
+                <p className="text-3xl font-bold text-white mb-1">
+                  {filteredTools.length > 0
+                    ? (
+                        filteredTools.reduce((sum, tool) => sum + tool.price_mnee, 0) /
+                        filteredTools.length
+                      ).toFixed(2)
+                    : '0.00'}
+                </p>
+                <p className="text-gray-400 text-sm">Average Price (MNEE)</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }

@@ -1,39 +1,35 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import {
-  Container,
-  Box,
-  Card,
-  CardContent,
-  TextField,
-  Button,
-  Typography,
-  Alert,
-  MenuItem,
-  Grid,
-  Chip,
-} from '@mui/material';
-import { Wrench, Plus, Code } from 'lucide-react';
+import { Wrench, Plus, CheckCircle, AlertCircle, Loader2, Code, DollarSign, Link as LinkIcon } from 'lucide-react';
+import Navbar from '@/components/Navbar';
 import api from '@/lib/api';
 
 const HTTP_METHODS = ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'];
 
 export default function CreateToolPage() {
+  const router = useRouter();
   const [formData, setFormData] = useState({
     name: '',
     description: '',
     api_url: '',
     api_method: 'GET',
-    api_headers: '',
-    api_body_template: '',
+    api_headers: '{}',
+    api_body_template: '{}',
     price_mnee: '',
   });
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
-  const router = useRouter();
+
+  useEffect(() => {
+    // Check if user is logged in
+    const token = localStorage.getItem('token');
+    if (!token) {
+      router.push('/login');
+    }
+  }, []);
 
   const handleChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -54,220 +50,259 @@ export default function CreateToolPage() {
         JSON.parse(formData.api_body_template);
       }
 
-      await api.post('/api/tools/', {
-        ...formData,
+      const payload = {
+        name: formData.name,
+        description: formData.description,
+        api_url: formData.api_url,
+        api_method: formData.api_method,
+        api_headers: formData.api_headers || '{}',
+        api_body_template: formData.api_body_template || '{}',
         price_mnee: parseFloat(formData.price_mnee),
-      });
+      };
 
+      await api.post('/api/tools', payload);
       setSuccess(true);
+      
+      // Redirect to tools page after 2 seconds
       setTimeout(() => {
         router.push('/tools');
       }, 2000);
     } catch (err: any) {
-      if (err.message?.includes('JSON')) {
-        setError('Invalid JSON format in headers or body template');
+      if (err.response?.data?.detail) {
+        setError(err.response.data.detail);
+      } else if (err.message.includes('JSON')) {
+        setError('Invalid JSON in headers or body template');
       } else {
-        setError(err.response?.data?.detail || 'Failed to create tool. Please try again.');
+        setError('Failed to create tool');
       }
     } finally {
       setLoading(false);
     }
   };
 
+  const getMethodColor = (method: string) => {
+    const colors: Record<string, string> = {
+      GET: 'bg-green-500/20 text-green-300 border-green-500/30',
+      POST: 'bg-blue-500/20 text-blue-300 border-blue-500/30',
+      PUT: 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30',
+      DELETE: 'bg-red-500/20 text-red-300 border-red-500/30',
+      PATCH: 'bg-purple-500/20 text-purple-300 border-purple-500/30',
+    };
+    return colors[method] || 'bg-gray-500/20 text-gray-300 border-gray-500/30';
+  };
+
   return (
-    <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-      <Box mb={4}>
-        <Box display="flex" alignItems="center" mb={2}>
-          <Wrench size={32} color="#667eea" />
-          <Typography variant="h4" fontWeight="bold" sx={{ ml: 2 }}>
-            Create New Tool
-          </Typography>
-        </Box>
-        <Typography variant="body1" color="text.secondary">
-          Upload your API tool to the marketplace. Once approved by admin, it will be available for AI agents to use.
-        </Typography>
-      </Box>
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-indigo-900 to-purple-900">
+      <Navbar />
+      
+      <div className="pt-24 pb-16 px-6">
+        <div className="max-w-4xl mx-auto">
+          {/* Header */}
+          <div className="mb-8">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="bg-gradient-to-br from-indigo-500 to-purple-600 p-3 rounded-xl">
+                <Plus className="h-8 w-8 text-white" />
+              </div>
+              <h1 className="text-4xl font-bold text-white">Create New Tool</h1>
+            </div>
+            <p className="text-gray-400">Submit your API to the marketplace and start earning MNEE</p>
+          </div>
 
-      <Card>
-        <CardContent sx={{ p: 4 }}>
-          <form onSubmit={handleSubmit}>
-            <Grid container spacing={3}>
-              {/* Basic Information */}
-              <Grid item xs={12}>
-                <Typography variant="h6" fontWeight="bold" gutterBottom>
-                  Basic Information
-                </Typography>
-              </Grid>
+          {/* Success Message */}
+          {success && (
+            <div className="mb-6 bg-green-500/20 border border-green-500/30 rounded-lg p-4 flex items-start gap-3">
+              <CheckCircle className="h-5 w-5 text-green-400 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="text-green-300 font-semibold">Tool created successfully!</p>
+                <p className="text-green-400 text-sm">Pending admin approval. Redirecting to tools page...</p>
+              </div>
+            </div>
+          )}
 
-              <Grid item xs={12} md={6}>
-                <TextField
-                  fullWidth
-                  label="Tool Name"
-                  value={formData.name}
-                  onChange={(e) => handleChange('name', e.target.value)}
-                  required
-                  placeholder="e.g., Weather API"
-                  helperText="A short, descriptive name for your tool"
-                />
-              </Grid>
+          {/* Error Message */}
+          {error && (
+            <div className="mb-6 bg-red-500/20 border border-red-500/30 rounded-lg p-4 flex items-start gap-3">
+              <AlertCircle className="h-5 w-5 text-red-400 flex-shrink-0 mt-0.5" />
+              <p className="text-red-300">{error}</p>
+            </div>
+          )}
 
-              <Grid item xs={12} md={6}>
-                <TextField
-                  fullWidth
-                  label="Price (MNEE)"
+          {/* Form */}
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Basic Info Card */}
+            <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl p-6">
+              <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+                <Wrench className="h-5 w-5" />
+                Basic Information
+              </h2>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-300 mb-2">
+                    Tool Name *
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.name}
+                    onChange={(e) => handleChange('name', e.target.value)}
+                    required
+                    placeholder="e.g., Weather API, Stock Price Lookup"
+                    className="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-300 mb-2">
+                    Description *
+                  </label>
+                  <textarea
+                    value={formData.description}
+                    onChange={(e) => handleChange('description', e.target.value)}
+                    required
+                    rows={3}
+                    placeholder="Describe what your API does and when AI agents should use it"
+                    className="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* API Configuration Card */}
+            <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl p-6">
+              <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+                <Code className="h-5 w-5" />
+                API Configuration
+              </h2>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-300 mb-2">
+                    API Endpoint URL *
+                  </label>
+                  <div className="relative">
+                    <LinkIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                    <input
+                      type="url"
+                      value={formData.api_url}
+                      onChange={(e) => handleChange('api_url', e.target.value)}
+                      required
+                      placeholder="https://api.example.com/v1/endpoint"
+                      className="w-full bg-white/10 border border-white/20 rounded-lg pl-10 pr-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-300 mb-2">
+                    HTTP Method *
+                  </label>
+                  <div className="flex gap-2 flex-wrap">
+                    {HTTP_METHODS.map((method) => (
+                      <button
+                        key={method}
+                        type="button"
+                        onClick={() => handleChange('api_method', method)}
+                        className={`px-4 py-2 rounded-lg text-sm font-semibold border transition-all ${
+                          formData.api_method === method
+                            ? getMethodColor(method)
+                            : 'bg-white/5 text-gray-400 border-white/10 hover:bg-white/10'
+                        }`}
+                      >
+                        {method}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-300 mb-2">
+                    Request Headers (JSON)
+                  </label>
+                  <textarea
+                    value={formData.api_headers}
+                    onChange={(e) => handleChange('api_headers', e.target.value)}
+                    rows={3}
+                    placeholder='{"Content-Type": "application/json", "Authorization": "Bearer {{token}}"}'
+                    className="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent font-mono text-sm resize-none"
+                  />
+                  <p className="text-xs text-gray-400 mt-1">Use {`{{variable}}`} for dynamic values</p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-300 mb-2">
+                    Request Body Template (JSON)
+                  </label>
+                  <textarea
+                    value={formData.api_body_template}
+                    onChange={(e) => handleChange('api_body_template', e.target.value)}
+                    rows={4}
+                    placeholder='{"query": "{{user_input}}", "options": {"limit": 10}}'
+                    className="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent font-mono text-sm resize-none"
+                  />
+                  <p className="text-xs text-gray-400 mt-1">Template for request body with variable placeholders</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Pricing Card */}
+            <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl p-6">
+              <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+                <DollarSign className="h-5 w-5" />
+                Pricing
+              </h2>
+              
+              <div>
+                <label className="block text-sm font-semibold text-gray-300 mb-2">
+                  Price per Request (MNEE) *
+                </label>
+                <input
                   type="number"
+                  step="0.01"
+                  min="0"
                   value={formData.price_mnee}
                   onChange={(e) => handleChange('price_mnee', e.target.value)}
                   required
-                  inputProps={{ min: 0, step: 0.01 }}
-                  placeholder="0.50"
-                  helperText="Price per API call in MNEE stablecoin"
+                  placeholder="0.10"
+                  className="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                 />
-              </Grid>
+                <p className="text-xs text-gray-400 mt-1">You'll earn this amount each time your tool is used</p>
+              </div>
+            </div>
 
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  multiline
-                  rows={3}
-                  label="Description"
-                  value={formData.description}
-                  onChange={(e) => handleChange('description', e.target.value)}
-                  required
-                  placeholder="Describe what your API does and what data it returns"
-                  helperText="Clear description helps AI agents understand when to use your tool"
-                />
-              </Grid>
+            {/* Info Card */}
+            <div className="bg-blue-500/20 border border-blue-500/30 rounded-lg p-4">
+              <p className="text-blue-300 text-sm">
+                <strong>Note:</strong> Your tool will require admin approval before it appears in the marketplace. 
+                Make sure your API is reliable and well-documented.
+              </p>
+            </div>
 
-              {/* API Configuration */}
-              <Grid item xs={12}>
-                <Typography variant="h6" fontWeight="bold" gutterBottom sx={{ mt: 2 }}>
-                  API Configuration
-                </Typography>
-              </Grid>
-
-              <Grid item xs={12} md={8}>
-                <TextField
-                  fullWidth
-                  label="API Endpoint URL"
-                  value={formData.api_url}
-                  onChange={(e) => handleChange('api_url', e.target.value)}
-                  required
-                  placeholder="https://api.example.com/endpoint"
-                  helperText="Full URL of your API endpoint"
-                />
-              </Grid>
-
-              <Grid item xs={12} md={4}>
-                <TextField
-                  fullWidth
-                  select
-                  label="HTTP Method"
-                  value={formData.api_method}
-                  onChange={(e) => handleChange('api_method', e.target.value)}
-                >
-                  {HTTP_METHODS.map((method) => (
-                    <MenuItem key={method} value={method}>
-                      {method}
-                    </MenuItem>
-                  ))}
-                </TextField>
-              </Grid>
-
-              <Grid item xs={12}>
-                <Box display="flex" alignItems="center" mb={1}>
-                  <Code size={20} />
-                  <Typography variant="subtitle2" sx={{ ml: 1 }}>
-                    Headers (Optional)
-                  </Typography>
-                  <Chip label="JSON" size="small" sx={{ ml: 1 }} />
-                </Box>
-                <TextField
-                  fullWidth
-                  multiline
-                  rows={3}
-                  value={formData.api_headers}
-                  onChange={(e) => handleChange('api_headers', e.target.value)}
-                  placeholder='{"Authorization": "Bearer token", "Content-Type": "application/json"}'
-                  helperText="JSON object with HTTP headers (optional)"
-                  sx={{ fontFamily: 'monospace' }}
-                />
-              </Grid>
-
-              <Grid item xs={12}>
-                <Box display="flex" alignItems="center" mb={1}>
-                  <Code size={20} />
-                  <Typography variant="subtitle2" sx={{ ml: 1 }}>
-                    Request Body Template (Optional)
-                  </Typography>
-                  <Chip label="JSON" size="small" sx={{ ml: 1 }} />
-                </Box>
-                <TextField
-                  fullWidth
-                  multiline
-                  rows={4}
-                  value={formData.api_body_template}
-                  onChange={(e) => handleChange('api_body_template', e.target.value)}
-                  placeholder='{"query": "value", "param": "value"}'
-                  helperText="JSON template for POST/PUT requests. AI agents can merge parameters into this template."
-                  sx={{ fontFamily: 'monospace' }}
-                />
-              </Grid>
-
-              {/* Security Notice */}
-              <Grid item xs={12}>
-                <Alert severity="info" sx={{ mt: 2 }}>
-                  <Typography variant="body2" fontWeight="bold" gutterBottom>
-                    Security Notice
-                  </Typography>
-                  <Typography variant="body2">
-                    • Your API metadata will be hashed and verified on every use
-                    <br />
-                    • Tool requires admin approval before going live
-                    <br />• Do not include sensitive credentials in headers (use environment variables on your API side)
-                  </Typography>
-                </Alert>
-              </Grid>
-
-              {error && (
-                <Grid item xs={12}>
-                  <Alert severity="error">{error}</Alert>
-                </Grid>
+            {/* Submit Button */}
+            <button
+              type="submit"
+              disabled={loading || success}
+              className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed text-white px-6 py-4 rounded-xl font-semibold text-lg transition-all flex items-center justify-center gap-2 shadow-lg"
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                  Creating Tool...
+                </>
+              ) : success ? (
+                <>
+                  <CheckCircle className="h-5 w-5" />
+                  Tool Created!
+                </>
+              ) : (
+                <>
+                  <Plus className="h-5 w-5" />
+                  Create Tool
+                </>
               )}
-
-              {success && (
-                <Grid item xs={12}>
-                  <Alert severity="success">
-                    Tool created successfully! Redirecting to tools page...
-                  </Alert>
-                </Grid>
-              )}
-
-              <Grid item xs={12}>
-                <Box display="flex" gap={2} justifyContent="flex-end">
-                  <Button variant="outlined" onClick={() => router.push('/tools')} disabled={loading}>
-                    Cancel
-                  </Button>
-                  <Button
-                    type="submit"
-                    variant="contained"
-                    startIcon={<Plus />}
-                    disabled={loading}
-                    sx={{
-                      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                      '&:hover': {
-                        background: 'linear-gradient(135deg, #5568d3 0%, #6a3d8f 100%)',
-                      },
-                    }}
-                  >
-                    {loading ? 'Creating...' : 'Create Tool'}
-                  </Button>
-                </Box>
-              </Grid>
-            </Grid>
+            </button>
           </form>
-        </CardContent>
-      </Card>
-    </Container>
+        </div>
+      </div>
+    </div>
   );
 }

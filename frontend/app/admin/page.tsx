@@ -1,29 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import {
-  Container,
-  Box,
-  Card,
-  CardContent,
-  Typography,
-  Button,
-  Grid,
-  Chip,
-  Alert,
-  CircularProgress,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
-} from '@mui/material';
-import { Shield, CheckCircle, XCircle, Clock, Users } from 'lucide-react';
-import api from '@/lib/api';
-import { getStoredUser } from '@/lib/auth';
 import { useRouter } from 'next/navigation';
+import { Shield, CheckCircle, XCircle, Clock, Users, Wrench, Loader2, DollarSign, AlertCircle } from 'lucide-react';
+import Navbar from '@/components/Navbar';
+import api from '@/lib/api';
 
 interface Tool {
   id: number;
@@ -47,23 +28,31 @@ interface User {
 }
 
 export default function AdminPage() {
+  const router = useRouter();
   const [pendingTools, setPendingTools] = useState<Tool[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
-  const [actionLoading, setActionLoading] = useState<number | null>(null);
   const [error, setError] = useState('');
-  const user = getStoredUser();
-  const router = useRouter();
+  const [actionLoading, setActionLoading] = useState<number | null>(null);
 
   useEffect(() => {
-    if (!user?.is_admin) {
+    // Check if user is admin
+    const userData = localStorage.getItem('user');
+    if (!userData) {
+      router.push('/login');
+      return;
+    }
+    
+    const user = JSON.parse(userData);
+    if (!user.is_admin) {
       router.push('/dashboard');
       return;
     }
-    fetchAdminData();
-  }, [user, router]);
 
-  const fetchAdminData = async () => {
+    fetchData();
+  }, []);
+
+  const fetchData = async () => {
     try {
       const [toolsRes, usersRes] = await Promise.all([
         api.get('/api/admin/pending-tools'),
@@ -71,8 +60,8 @@ export default function AdminPage() {
       ]);
       setPendingTools(toolsRes.data);
       setUsers(usersRes.data);
-    } catch (err) {
-      console.error('Failed to fetch admin data:', err);
+    } catch (error) {
+      console.error('Error fetching admin data:', error);
       setError('Failed to load admin data');
     } finally {
       setLoading(false);
@@ -81,13 +70,11 @@ export default function AdminPage() {
 
   const handleApprove = async (toolId: number) => {
     setActionLoading(toolId);
-    setError('');
-
     try {
-      await api.post(`/api/admin/approve-tool/${toolId}`);
-      setPendingTools((prev) => prev.filter((tool) => tool.id !== toolId));
-    } catch (err: any) {
-      setError(err.response?.data?.detail || 'Failed to approve tool');
+      await api.post(`/api/admin/tools/${toolId}/approve`);
+      setPendingTools((prev) => prev.filter((t) => t.id !== toolId));
+    } catch (error) {
+      setError('Failed to approve tool');
     } finally {
       setActionLoading(null);
     }
@@ -95,292 +82,248 @@ export default function AdminPage() {
 
   const handleReject = async (toolId: number) => {
     setActionLoading(toolId);
-    setError('');
-
     try {
-      await api.post(`/api/admin/reject-tool/${toolId}`);
-      setPendingTools((prev) => prev.filter((tool) => tool.id !== toolId));
-    } catch (err: any) {
-      setError(err.response?.data?.detail || 'Failed to reject tool');
+      await api.delete(`/api/admin/tools/${toolId}`);
+      setPendingTools((prev) => prev.filter((t) => t.id !== toolId));
+    } catch (error) {
+      setError('Failed to reject tool');
     } finally {
       setActionLoading(null);
     }
   };
 
-  const handleMakeAdmin = async (userId: number) => {
-    setActionLoading(userId);
-    setError('');
-
-    try {
-      await api.post(`/api/admin/make-admin/${userId}`);
-      setUsers((prev) =>
-        prev.map((u) => (u.id === userId ? { ...u, is_admin: true } : u))
-      );
-    } catch (err: any) {
-      setError(err.response?.data?.detail || 'Failed to make user admin');
-    } finally {
-      setActionLoading(null);
-    }
+  const getMethodColor = (method: string) => {
+    const colors: Record<string, string> = {
+      GET: 'bg-green-500/20 text-green-300 border-green-500/30',
+      POST: 'bg-blue-500/20 text-blue-300 border-blue-500/30',
+      PUT: 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30',
+      DELETE: 'bg-red-500/20 text-red-300 border-red-500/30',
+    };
+    return colors[method] || 'bg-gray-500/20 text-gray-300 border-gray-500/30';
   };
 
   if (loading) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="80vh">
-        <CircularProgress />
-      </Box>
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-indigo-900 to-purple-900">
+        <Navbar />
+        <div className="flex items-center justify-center h-screen">
+          <Loader2 className="h-8 w-8 text-white animate-spin" />
+        </div>
+      </div>
     );
   }
 
-  if (!user?.is_admin) {
-    return null;
-  }
-
   return (
-    <Container maxWidth="xl" sx={{ mt: 4, mb: 4 }}>
-      <Box mb={4}>
-        <Box display="flex" alignItems="center" mb={2}>
-          <Shield size={32} color="#667eea" />
-          <Typography variant="h4" fontWeight="bold" sx={{ ml: 2 }}>
-            Admin Panel
-          </Typography>
-        </Box>
-        <Typography variant="body1" color="text.secondary">
-          Manage tool approvals and user permissions
-        </Typography>
-      </Box>
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-indigo-900 to-purple-900">
+      <Navbar />
+      
+      <div className="pt-24 pb-16 px-6">
+        <div className="max-w-7xl mx-auto">
+          {/* Header */}
+          <div className="mb-8">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="bg-gradient-to-br from-red-500 to-pink-600 p-3 rounded-xl">
+                <Shield className="h-8 w-8 text-white" />
+              </div>
+              <h1 className="text-4xl font-bold text-white">Admin Dashboard</h1>
+            </div>
+            <p className="text-gray-400">Manage tools, users, and platform operations</p>
+          </div>
 
-      {error && (
-        <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError('')}>
-          {error}
-        </Alert>
-      )}
-
-      {/* Statistics */}
-      <Grid container spacing={3} sx={{ mb: 4 }}>
-        <Grid item xs={12} sm={6} md={3}>
-          <Card>
-            <CardContent>
-              <Box display="flex" alignItems="center" mb={1}>
-                <Clock size={20} color="#f59e0b" />
-                <Typography variant="h6" sx={{ ml: 1 }}>
-                  Pending
-                </Typography>
-              </Box>
-              <Typography variant="h4" fontWeight="bold">
-                {pendingTools.length}
-              </Typography>
-              <Typography variant="caption" color="text.secondary">
-                Tools awaiting approval
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-
-        <Grid item xs={12} sm={6} md={3}>
-          <Card>
-            <CardContent>
-              <Box display="flex" alignItems="center" mb={1}>
-                <Users size={20} color="#667eea" />
-                <Typography variant="h6" sx={{ ml: 1 }}>
-                  Users
-                </Typography>
-              </Box>
-              <Typography variant="h4" fontWeight="bold">
-                {users.length}
-              </Typography>
-              <Typography variant="caption" color="text.secondary">
-                Total registered users
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-
-        <Grid item xs={12} sm={6} md={3}>
-          <Card>
-            <CardContent>
-              <Box display="flex" alignItems="center" mb={1}>
-                <Shield size={20} color="#10b981" />
-                <Typography variant="h6" sx={{ ml: 1 }}>
-                  Admins
-                </Typography>
-              </Box>
-              <Typography variant="h4" fontWeight="bold">
-                {users.filter((u) => u.is_admin).length}
-              </Typography>
-              <Typography variant="caption" color="text.secondary">
-                Admin users
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-
-        <Grid item xs={12} sm={6} md={3}>
-          <Card>
-            <CardContent>
-              <Box display="flex" alignItems="center" mb={1}>
-                <CheckCircle size={20} color="#10b981" />
-                <Typography variant="h6" sx={{ ml: 1 }}>
-                  Status
-                </Typography>
-              </Box>
-              <Typography variant="h4" fontWeight="bold" color="success.main">
-                Active
-              </Typography>
-              <Typography variant="caption" color="text.secondary">
-                System operational
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-      </Grid>
-
-      {/* Pending Tools */}
-      <Card sx={{ mb: 4 }}>
-        <CardContent>
-          <Typography variant="h6" fontWeight="bold" gutterBottom>
-            Pending Tool Approvals
-          </Typography>
-
-          {pendingTools.length === 0 ? (
-            <Box textAlign="center" py={4}>
-              <CheckCircle size={48} color="#10b981" style={{ marginBottom: 16 }} />
-              <Typography variant="body1" color="text.secondary">
-                No pending approvals
-              </Typography>
-            </Box>
-          ) : (
-            <TableContainer>
-              <Table>
-                <TableHead>
-                  <TableRow>
-                    <TableCell>Tool Name</TableCell>
-                    <TableCell>Description</TableCell>
-                    <TableCell>API</TableCell>
-                    <TableCell>Price</TableCell>
-                    <TableCell>Created</TableCell>
-                    <TableCell align="right">Actions</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {pendingTools.map((tool) => (
-                    <TableRow key={tool.id}>
-                      <TableCell>
-                        <Typography fontWeight="bold">{tool.name}</Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Typography variant="body2" sx={{ maxWidth: 300 }}>
-                          {tool.description}
-                        </Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Chip label={tool.api_method} size="small" sx={{ mr: 1 }} />
-                        <Typography variant="caption" sx={{ fontFamily: 'monospace' }}>
-                          {tool.api_url.substring(0, 30)}...
-                        </Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Typography fontWeight="bold" color="success.main">
-                          {tool.price_mnee} MNEE
-                        </Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Typography variant="caption">
-                          {new Date(tool.created_at).toLocaleDateString()}
-                        </Typography>
-                      </TableCell>
-                      <TableCell align="right">
-                        <Box display="flex" gap={1} justifyContent="flex-end">
-                          <Button
-                            size="small"
-                            variant="contained"
-                            color="success"
-                            startIcon={<CheckCircle size={16} />}
-                            onClick={() => handleApprove(tool.id)}
-                            disabled={actionLoading === tool.id}
-                          >
-                            Approve
-                          </Button>
-                          <Button
-                            size="small"
-                            variant="outlined"
-                            color="error"
-                            startIcon={<XCircle size={16} />}
-                            onClick={() => handleReject(tool.id)}
-                            disabled={actionLoading === tool.id}
-                          >
-                            Reject
-                          </Button>
-                        </Box>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
+          {/* Error Message */}
+          {error && (
+            <div className="mb-6 bg-red-500/20 border border-red-500/30 rounded-lg p-4 flex items-start gap-3">
+              <AlertCircle className="h-5 w-5 text-red-400 flex-shrink-0 mt-0.5" />
+              <p className="text-red-300">{error}</p>
+            </div>
           )}
-        </CardContent>
-      </Card>
 
-      {/* User Management */}
-      <Card>
-        <CardContent>
-          <Typography variant="h6" fontWeight="bold" gutterBottom>
-            User Management
-          </Typography>
+          {/* Stats Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-gray-400 text-sm mb-1">Pending Tools</p>
+                  <p className="text-4xl font-bold text-white">{pendingTools.length}</p>
+                </div>
+                <div className="bg-yellow-500/20 p-3 rounded-xl">
+                  <Clock className="h-8 w-8 text-yellow-400" />
+                </div>
+              </div>
+            </div>
 
-          <TableContainer>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell>Email</TableCell>
-                  <TableCell>Wallet Address</TableCell>
-                  <TableCell>Role</TableCell>
-                  <TableCell>Registered</TableCell>
-                  <TableCell align="right">Actions</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {users.map((usr) => (
-                  <TableRow key={usr.id}>
-                    <TableCell>
-                      <Typography fontWeight="bold">{usr.email}</Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>
-                        {usr.public_key.slice(0, 15)}...
-                      </Typography>
-                    </TableCell>
-                    <TableCell>
-                      {usr.is_admin ? (
-                        <Chip label="Admin" color="primary" size="small" />
-                      ) : (
-                        <Chip label="User" size="small" />
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <Typography variant="caption">
-                        {new Date(usr.created_at).toLocaleDateString()}
-                      </Typography>
-                    </TableCell>
-                    <TableCell align="right">
-                      {!usr.is_admin && (
-                        <Button
-                          size="small"
-                          variant="outlined"
-                          onClick={() => handleMakeAdmin(usr.id)}
-                          disabled={actionLoading === usr.id}
-                        >
-                          Make Admin
-                        </Button>
-                      )}
-                    </TableCell>
-                  </TableRow>
+            <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-gray-400 text-sm mb-1">Total Users</p>
+                  <p className="text-4xl font-bold text-white">{users.length}</p>
+                </div>
+                <div className="bg-blue-500/20 p-3 rounded-xl">
+                  <Users className="h-8 w-8 text-blue-400" />
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-gray-400 text-sm mb-1">Admin Users</p>
+                  <p className="text-4xl font-bold text-white">
+                    {users.filter((u) => u.is_admin).length}
+                  </p>
+                </div>
+                <div className="bg-purple-500/20 p-3 rounded-xl">
+                  <Shield className="h-8 w-8 text-purple-400" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Pending Tools Section */}
+          <div className="mb-8">
+            <h2 className="text-2xl font-bold text-white mb-4 flex items-center gap-2">
+              <Wrench className="h-6 w-6" />
+              Pending Tool Approvals
+            </h2>
+
+            {pendingTools.length === 0 ? (
+              <div className="bg-white/5 backdrop-blur-xl rounded-2xl p-12 border border-white/10 text-center">
+                <CheckCircle className="h-16 w-16 text-green-400 mx-auto mb-4" />
+                <h3 className="text-xl font-bold text-white mb-2">All Caught Up!</h3>
+                <p className="text-gray-400">No pending tools to review</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {pendingTools.map((tool) => (
+                  <div
+                    key={tool.id}
+                    className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl p-6 hover:bg-white/[0.15] transition-all"
+                  >
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-2">
+                          <h3 className="text-xl font-bold text-white">{tool.name}</h3>
+                          <span
+                            className={`px-2 py-1 rounded-md text-xs font-semibold border ${getMethodColor(
+                              tool.api_method
+                            )}`}
+                          >
+                            {tool.api_method}
+                          </span>
+                        </div>
+                        <p className="text-gray-400 text-sm mb-3">{tool.description}</p>
+                        <div className="flex items-center gap-4 text-sm text-gray-400">
+                          <span className="truncate">📍 {tool.api_url}</span>
+                          <span className="flex items-center gap-1">
+                            <DollarSign className="h-4 w-4 text-yellow-400" />
+                            {tool.price_mnee} MNEE
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <Clock className="h-4 w-4" />
+                            {new Date(tool.created_at).toLocaleDateString()}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex gap-3">
+                      <button
+                        onClick={() => handleApprove(tool.id)}
+                        disabled={actionLoading === tool.id}
+                        className="flex-1 bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed text-white px-4 py-2 rounded-lg font-semibold transition-all flex items-center justify-center gap-2"
+                      >
+                        {actionLoading === tool.id ? (
+                          <Loader2 className="h-5 w-5 animate-spin" />
+                        ) : (
+                          <>
+                            <CheckCircle className="h-5 w-5" />
+                            Approve
+                          </>
+                        )}
+                      </button>
+                      <button
+                        onClick={() => handleReject(tool.id)}
+                        disabled={actionLoading === tool.id}
+                        className="flex-1 bg-red-600 hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed text-white px-4 py-2 rounded-lg font-semibold transition-all flex items-center justify-center gap-2"
+                      >
+                        {actionLoading === tool.id ? (
+                          <Loader2 className="h-5 w-5 animate-spin" />
+                        ) : (
+                          <>
+                            <XCircle className="h-5 w-5" />
+                            Reject
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </div>
                 ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        </CardContent>
-      </Card>
-    </Container>
+              </div>
+            )}
+          </div>
+
+          {/* Users Section */}
+          <div>
+            <h2 className="text-2xl font-bold text-white mb-4 flex items-center gap-2">
+              <Users className="h-6 w-6" />
+              Registered Users
+            </h2>
+
+            <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-white/5 border-b border-white/10">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider">
+                        Email
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider">
+                        Wallet Address
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider">
+                        Role
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider">
+                        Joined
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-white/10">
+                    {users.map((user) => (
+                      <tr key={user.id} className="hover:bg-white/5 transition-colors">
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-white">{user.email}</div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-400 font-mono">
+                            {user.public_key.slice(0, 10)}...{user.public_key.slice(-8)}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          {user.is_admin ? (
+                            <span className="px-3 py-1 rounded-full text-xs font-semibold bg-purple-500/20 text-purple-300 border border-purple-500/30">
+                              Admin
+                            </span>
+                          ) : (
+                            <span className="px-3 py-1 rounded-full text-xs font-semibold bg-gray-500/20 text-gray-300 border border-gray-500/30">
+                              User
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-400">
+                            {new Date(user.created_at).toLocaleDateString()}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }

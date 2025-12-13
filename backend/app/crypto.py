@@ -30,6 +30,18 @@ def decrypt_private_key(encrypted_private_key: str) -> str:
     decrypted = fernet.decrypt(encrypted_private_key.encode())
     return decrypted.decode()
 
+def encrypt_data(data: str, encryption_key: bytes) -> str:
+    """Generic encryption function for any sensitive data"""
+    fernet = Fernet(encryption_key)
+    encrypted = fernet.encrypt(data.encode())
+    return encrypted.decode()
+
+def decrypt_data(encrypted_data: str, encryption_key: bytes) -> str:
+    """Generic decryption function for any sensitive data"""
+    fernet = Fernet(encryption_key)
+    decrypted = fernet.decrypt(encrypted_data.encode())
+    return decrypted.decode()
+
 def get_web3_instance() -> Web3:
     """Get Web3 instance connected to Ethereum"""
     w3 = Web3(Web3.HTTPProvider(settings.ethereum_rpc_url))
