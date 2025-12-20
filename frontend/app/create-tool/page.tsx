@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Wrench, Plus, CheckCircle, AlertCircle, Loader2, Code, DollarSign, Link as LinkIcon } from 'lucide-react';
+import { Wrench, Plus, CheckCircle, AlertCircle, Loader2, Code, DollarSign, Link as LinkIcon, ExternalLink } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import api from '@/lib/api';
 
@@ -106,6 +106,54 @@ export default function CreateToolPage() {
               <h1 className="text-4xl font-bold text-white">Create New Tool</h1>
             </div>
             <p className="text-gray-400">Submit your API to the marketplace and start earning MNEE</p>
+          </div>
+
+          {/* x402 Protocol Info Banner */}
+          <div className="mb-6 bg-gradient-to-r from-purple-500/20 to-indigo-500/20 border-2 border-purple-500/30 rounded-2xl p-6">
+            <div className="flex items-start gap-4">
+              <div className="bg-purple-500/30 p-3 rounded-xl flex-shrink-0">
+                <Code className="h-6 w-6 text-purple-300" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-xl font-bold text-white mb-2 flex items-center gap-2">
+                  💡 Build with x402 Protocol
+                </h3>
+                <p className="text-gray-300 mb-3">
+                  The <strong className="text-purple-300">x402 protocol</strong> is a standardized way to create payment-gated APIs that work seamlessly with AI agents. 
+                  It enables automatic micropayments for API usage using the MNEE stablecoin on Ethereum.
+                </p>
+                <div className="bg-black/30 rounded-lg p-4 mb-3">
+                  <h4 className="text-sm font-semibold text-purple-300 mb-2">Key Features:</h4>
+                  <ul className="text-sm text-gray-300 space-y-1 list-disc list-inside">
+                    <li>🔐 <strong>Authentication:</strong> HTTP 402 (Payment Required) status code</li>
+                    <li>💰 <strong>Pricing:</strong> Set per-request prices in MNEE tokens</li>
+                    <li>🤖 <strong>AI-Friendly:</strong> Compatible with MCP (Model Context Protocol)</li>
+                    <li>⚡ <strong>Instant Payments:</strong> Automatic blockchain transactions on each API call</li>
+                    <li>🛡️ <strong>Secure:</strong> Cryptographic verification of payments before API access</li>
+                  </ul>
+                </div>
+                <div className="flex items-center gap-3">
+                  <a
+                    href="https://github.com/x402-protocol/specification"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-all flex items-center gap-2"
+                  >
+                    📖 Read Specification
+                    <ExternalLink className="h-4 w-4" />
+                  </a>
+                  <a
+                    href="https://github.com/x402-protocol/examples"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="bg-white/10 hover:bg-white/20 border border-white/20 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-all flex items-center gap-2"
+                  >
+                    💻 View Examples
+                    <ExternalLink className="h-4 w-4" />
+                  </a>
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* Success Message */}

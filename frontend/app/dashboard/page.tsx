@@ -279,7 +279,7 @@ export default function DashboardPage() {
                     className="bg-white/5 rounded-lg p-4 hover:bg-white/10 transition-colors"
                   >
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-white font-medium">{tx.tool?.name || "Unknown Tool"}</span>
+                      <span className="text-white font-medium">{tx.tool_name || "Unknown Tool"}</span>
                       <span className="text-green-400 font-bold">+{tx.amount_mnee} MNEE</span>
                     </div>
                     <div className="flex items-center gap-2 text-sm text-gray-400">
@@ -308,7 +308,7 @@ export default function DashboardPage() {
                     className="bg-white/5 rounded-lg p-4 hover:bg-white/10 transition-colors"
                   >
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-white font-medium">{tx.tool?.name || "Unknown Tool"}</span>
+                      <span className="text-white font-medium">{tx.tool_name || "Unknown Tool"}</span>
                       <span className="text-red-400 font-bold">-{tx.amount_mnee} MNEE</span>
                     </div>
                     <div className="flex items-center gap-2 text-sm text-gray-400">

@@ -16,6 +16,8 @@ import {
   Sparkles,
   Shield,
   User,
+  DollarSign,
+  BookOpen,
 } from "lucide-react";
 
 export default function Navbar() {
@@ -82,6 +84,19 @@ export default function Navbar() {
                   </button>
                 </Link>
 
+                <Link href="/tool-guide">
+                  <button
+                    className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-all ${
+                      isActive("/tool-guide")
+                        ? "bg-white/20 text-white"
+                        : "text-gray-300 hover:bg-white/10 hover:text-white"
+                    }`}
+                  >
+                    <BookOpen className="h-4 w-4" />
+                    <span>Tool Guide</span>
+                  </button>
+                </Link>
+
                 <Link href="/login">
                   <button className="flex items-center space-x-2 px-4 py-2 rounded-lg text-gray-300 hover:bg-white/10 hover:text-white transition-all">
                     <User className="h-4 w-4" />
@@ -135,6 +150,32 @@ export default function Navbar() {
                   >
                     <Bot className="h-4 w-4" />
                     <span>AI Agent</span>
+                  </button>
+                </Link>
+
+                <Link href="/wallet">
+                  <button
+                    className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-all ${
+                      isActive("/wallet")
+                        ? "bg-white/20 text-white"
+                        : "text-gray-300 hover:bg-white/10 hover:text-white"
+                    }`}
+                  >
+                    <DollarSign className="h-4 w-4" />
+                    <span>Wallet</span>
+                  </button>
+                </Link>
+
+                <Link href="/tool-guide">
+                  <button
+                    className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-all ${
+                      isActive("/tool-guide")
+                        ? "bg-white/20 text-white"
+                        : "text-gray-300 hover:bg-white/10 hover:text-white"
+                    }`}
+                  >
+                    <BookOpen className="h-4 w-4" />
+                    <span>Tool Guide</span>
                   </button>
                 </Link>
 
@@ -218,6 +259,19 @@ export default function Navbar() {
                   </button>
                 </Link>
 
+                <Link href="/tool-guide" onClick={() => setMobileMenuOpen(false)}>
+                  <button
+                    className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-all ${
+                      isActive("/tool-guide")
+                        ? "bg-white/20 text-white"
+                        : "text-gray-300 hover:bg-white/10"
+                    }`}
+                  >
+                    <BookOpen className="h-5 w-5" />
+                    <span>Tool Guide</span>
+                  </button>
+                </Link>
+
                 <Link href="/login" onClick={() => setMobileMenuOpen(false)}>
                   <button className="w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-gray-300 hover:bg-white/10 transition-all">
                     <User className="h-5 w-5" />
@@ -277,6 +331,32 @@ export default function Navbar() {
                   >
                     <Bot className="h-5 w-5" />
                     <span>AI Agent</span>
+                  </button>
+                </Link>
+
+                <Link href="/wallet" onClick={() => setMobileMenuOpen(false)}>
+                  <button
+                    className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-all ${
+                      isActive("/wallet")
+                        ? "bg-white/20 text-white"
+                        : "text-gray-300 hover:bg-white/10"
+                    }`}
+                  >
+                    <DollarSign className="h-5 w-5" />
+                    <span>Wallet</span>
+                  </button>
+                </Link>
+
+                <Link href="/tool-guide" onClick={() => setMobileMenuOpen(false)}>
+                  <button
+                    className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-all ${
+                      isActive("/tool-guide")
+                        ? "bg-white/20 text-white"
+                        : "text-gray-300 hover:bg-white/10"
+                    }`}
+                  >
+                    <BookOpen className="h-5 w-5" />
+                    <span>Tool Guide</span>
                   </button>
                 </Link>
 

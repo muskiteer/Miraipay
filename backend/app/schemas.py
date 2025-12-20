@@ -62,6 +62,7 @@ class TransactionResponse(BaseModel):
     tx_hash: str
     status: str
     created_at: datetime
+    tool_name: str | None = None
     
     class Config:
         from_attributes = True

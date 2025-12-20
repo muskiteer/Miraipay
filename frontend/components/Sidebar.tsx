@@ -13,6 +13,7 @@ import {
   LogOut,
   Shield,
   Settings,
+  DollarSign,
 } from "lucide-react";
 
 interface SidebarProps {
@@ -46,6 +47,11 @@ export default function Sidebar({ user, onLogout }: SidebarProps) {
       href: "/ai-agent",
       label: "AI Agent",
       icon: Bot,
+    },
+    {
+      href: "/wallet",
+      label: "Wallet",
+      icon: DollarSign,
     },
     {
       href: "/settings",

@@ -138,28 +138,65 @@ async def pay_for_tool(
         )
 
 @router.get("/balance")
-async def get_mnee_balance(current_user: User = Depends(get_current_user)):
+async def get_mnee_balance(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
     """Get user's MNEE balance"""
+    blockchain_error = None
+    
     try:
+        # Try to get real balance from blockchain
         w3 = get_web3_instance()
+        
+        # Check if connected
+        if not w3.is_connected():
+            raise Exception("Cannot connect to Ethereum RPC endpoint")
+        
         mnee_contract = w3.eth.contract(
             address=Web3.to_checksum_address(settings.mnee_contract_address),
             abi=MNEE_ABI
         )
         
-        balance_wei = mnee_contract.functions.balanceOf(current_user.public_key).call()
+        # Try to call balanceOf
+        balance_wei = mnee_contract.functions.balanceOf(
+            Web3.to_checksum_address(current_user.public_key)
+        ).call()
         balance_mnee = w3.from_wei(balance_wei, 'ether')
         
         return {
             "address": current_user.public_key,
             "balance_mnee": float(balance_mnee),
-            "balance_wei": str(balance_wei)
+            "balance_wei": str(balance_wei),
+            "source": "blockchain"
         }
     except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to fetch balance: {str(e)}"
-        )
+        blockchain_error = str(e)
+        
+        # Fallback: Calculate balance from transactions for demo purposes
+        # Total earned (received payments)
+        total_earned = db.query(func.sum(Transaction.amount_mnee)).filter(
+            Transaction.to_user_id == current_user.id,
+            Transaction.status.in_(["confirmed", "completed", "pending"])
+        ).scalar() or 0.0
+        
+        # Total spent (sent payments)
+        total_spent = db.query(func.sum(Transaction.amount_mnee)).filter(
+            Transaction.from_user_id == current_user.id,
+            Transaction.status.in_(["confirmed", "completed", "pending"])
+        ).scalar() or 0.0
+        
+        # Mock balance = earned - spent + initial balance (1000 MNEE for demo)
+        mock_balance = 1000.0 + total_earned - total_spent
+        
+        return {
+            "address": current_user.public_key,
+            "balance_mnee": float(mock_balance),
+            "balance_wei": str(int(mock_balance * 10**18)),
+            "source": "simulated",
+            "blockchain_error": blockchain_error,
+            "note": "Using simulated balance. To show real balance: 1) Deploy MNEE ERC-20 token, 2) Update MNEE_CONTRACT_ADDRESS in .env, 3) Ensure ETHEREUM_RPC_URL is valid"
+        }
 
 @router.get("/earnings", response_model=EarningsResponse)
 async def get_earnings(
@@ -176,10 +213,18 @@ async def get_earnings(
         Transaction.status == "confirmed"
     ).scalar() or 0.0
     
+    # Add tool names to transactions
+    tx_responses = []
+    for tx in transactions:
+        tx_dict = TransactionResponse.from_orm(tx).model_dump()
+        if tx.tool:
+            tx_dict['tool_name'] = tx.tool.name
+        tx_responses.append(TransactionResponse(**tx_dict))
+    
     return {
         "total_earned": total_earned,
         "transaction_count": len(transactions),
-        "transactions": [TransactionResponse.from_orm(tx) for tx in transactions]
+        "transactions": tx_responses
     }
 
 @router.get("/spending", response_model=SpendingResponse)
@@ -197,10 +242,18 @@ async def get_spending(
         Transaction.status == "confirmed"
     ).scalar() or 0.0
     
+    # Add tool names to transactions
+    tx_responses = []
+    for tx in transactions:
+        tx_dict = TransactionResponse.from_orm(tx).model_dump()
+        if tx.tool:
+            tx_dict['tool_name'] = tx.tool.name
+        tx_responses.append(TransactionResponse(**tx_dict))
+    
     return {
         "total_spent": total_spent,
         "transaction_count": len(transactions),
-        "transactions": [TransactionResponse.from_orm(tx) for tx in transactions]
+        "transactions": tx_responses
     }
 
 @router.get("/transactions", response_model=List[TransactionResponse])
@@ -214,4 +267,12 @@ async def get_all_transactions(
         (Transaction.to_user_id == current_user.id)
     ).order_by(Transaction.created_at.desc()).all()
     
-    return [TransactionResponse.from_orm(tx) for tx in transactions]
+    # Add tool names to transactions
+    tx_responses = []
+    for tx in transactions:
+        tx_dict = TransactionResponse.from_orm(tx).model_dump()
+        if tx.tool:
+            tx_dict['tool_name'] = tx.tool.name
+        tx_responses.append(TransactionResponse(**tx_dict))
+    
+    return tx_responses

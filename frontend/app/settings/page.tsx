@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Sidebar from "@/components/Sidebar";
 import TopNavbar from "@/components/TopNavbar";
 import { useRouter } from "next/navigation";
-import { api } from "@/lib/api";
+import api from "@/lib/api";
 import { Settings, Key, CheckCircle, AlertCircle, Save, Trash2 } from "lucide-react";
 
 export default function SettingsPage() {
@@ -28,7 +28,7 @@ export default function SettingsPage() {
         return;
       }
 
-      const response = await api.get("/auth/me");
+      const response = await api.get("/api/auth/me");
       setUser(response.data);
     } catch (error) {
       console.error("Authentication check failed:", error);
@@ -38,7 +38,7 @@ export default function SettingsPage() {
 
   const checkExistingKey = async () => {
     try {
-      const response = await api.get("/settings/groq");
+      const response = await api.get("/api/settings/groq");
       setHasExistingKey(response.data.has_key);
     } catch (error) {
       console.error("Failed to check existing key:", error);
@@ -55,7 +55,7 @@ export default function SettingsPage() {
     setMessage(null);
 
     try {
-      const response = await api.post("/settings/groq", {
+      const response = await api.post("/api/settings/groq", {
         api_key: groqApiKey,
       });
 
@@ -81,7 +81,7 @@ export default function SettingsPage() {
     setMessage(null);
 
     try {
-      const response = await api.delete("/settings/groq");
+      const response = await api.delete("/api/settings/groq");
       setMessage({ type: "success", text: response.data.message });
       setHasExistingKey(false);
     } catch (error: any) {

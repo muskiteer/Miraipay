@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from app.database import engine, Base
-from app.routes import auth, tools, payments, admin, mcp, settings, agent
+from app.routes import auth, tools, payments, admin, mcp, settings, agent, demo
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -35,13 +35,16 @@ app.include_router(admin.router, prefix="/api/admin", tags=["Admin"])
 app.include_router(mcp.router, prefix="/mcp", tags=["MCP Server"])
 app.include_router(settings.router, prefix="/api/settings", tags=["Settings"])
 app.include_router(agent.router, prefix="/api/agent", tags=["AI Agent"])
+app.include_router(demo.router, prefix="/api/demo", tags=["Demo Tools"])
 
 @app.get("/")
 async def root():
     return {
         "message": "StableTool API - MCP Server with MNEE Payments",
         "docs": "/docs",
-        "mcp_endpoint": "/mcp"
+        "mcp_endpoint": "/mcp",
+        "x402_protocol": "Supported",
+        "demo_tools": "/api/demo"
     }
 
 @app.get("/health")
