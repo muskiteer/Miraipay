@@ -67,10 +67,14 @@ export default function WalletPage() {
   const fetchWalletData = async () => {
     try {
       setError('');
+      setLoading(true);
       
       // Fetch balance
       const balanceRes = await api.get('/api/payments/balance');
-      setBalance(balanceRes.data.balance_mnee || 0);
+      console.log('Balance API response:', balanceRes.data);
+      const balanceValue = parseFloat(balanceRes.data.balance_mnee) || 0;
+      console.log('Parsed balance value:', balanceValue);
+      setBalance(balanceValue);
 
       // Fetch transactions
       const transactionsRes = await api.get('/api/payments/transactions');
@@ -80,15 +84,18 @@ export default function WalletPage() {
       const userData = localStorage.getItem('user');
       const userId = userData ? JSON.parse(userData).id : null;
       
-      // Categorize transactions
-      const categorizedTxs = txs.map((tx: any) => ({
-        ...tx,
-        type: tx.user_id === userId ? 'sent' : 'received'
-      }));
+      // Categorize transactions based on from_user_id and to_user_id
+      // Exclude self-transactions (where user sent to themselves)
+      const categorizedTxs = txs
+        .filter((tx: any) => tx.from_user_id !== tx.to_user_id)
+        .map((tx: any) => ({
+          ...tx,
+          type: tx.from_user_id === userId ? 'sent' : 'received'
+        }));
       
       setTransactions(categorizedTxs);
 
-      // Calculate totals
+      // Calculate totals (already filtered for non-self transactions)
       const earned = categorizedTxs
         .filter((tx: Transaction) => tx.type === 'received')
         .reduce((sum: number, tx: Transaction) => sum + tx.amount_mnee, 0);
@@ -250,11 +257,9 @@ export default function WalletPage() {
               </div>
               <p className="text-gray-400 text-sm mb-1">Net Balance</p>
               <p className="text-3xl font-bold text-white">
-                {(totalEarned - totalSpent).toFixed(2)}
+                {balance.toFixed(2)}
               </p>
-              <p className={`text-sm mt-1 ${
-                totalEarned - totalSpent >= 0 ? 'text-green-400' : 'text-red-400'
-              }`}>
+              <p className="text-green-400 text-sm mt-1">
                 MNEE
               </p>
             </div>

@@ -32,8 +32,10 @@ export default function Navbar() {
     const userData = localStorage.getItem("user");
     if (token && userData) {
       setUser(JSON.parse(userData));
+    } else {
+      setUser(null);
     }
-  }, []);
+  }, [pathname]);
 
   const handleLogout = () => {
     localStorage.removeItem("token");

@@ -145,71 +145,49 @@ async def get_mnee_balance(
     """Get user's MNEE balance"""
     blockchain_error = None
     
-    try:
-        # Try to get real balance from blockchain
-        w3 = get_web3_instance()
-        
-        # Check if connected
-        if not w3.is_connected():
-            raise Exception("Cannot connect to Ethereum RPC endpoint")
-        
-        mnee_contract = w3.eth.contract(
-            address=Web3.to_checksum_address(settings.mnee_contract_address),
-            abi=MNEE_ABI
-        )
-        
-        # Try to call balanceOf
-        balance_wei = mnee_contract.functions.balanceOf(
-            Web3.to_checksum_address(current_user.public_key)
-        ).call()
-        balance_mnee = w3.from_wei(balance_wei, 'ether')
-        
-        return {
-            "address": current_user.public_key,
-            "balance_mnee": float(balance_mnee),
-            "balance_wei": str(balance_wei),
-            "source": "blockchain"
-        }
-    except Exception as e:
-        blockchain_error = str(e)
-        
-        # Fallback: Calculate balance from transactions for demo purposes
-        # Total earned (received payments)
-        total_earned = db.query(func.sum(Transaction.amount_mnee)).filter(
-            Transaction.to_user_id == current_user.id,
-            Transaction.status.in_(["confirmed", "completed", "pending"])
-        ).scalar() or 0.0
-        
-        # Total spent (sent payments)
-        total_spent = db.query(func.sum(Transaction.amount_mnee)).filter(
-            Transaction.from_user_id == current_user.id,
-            Transaction.status.in_(["confirmed", "completed", "pending"])
-        ).scalar() or 0.0
-        
-        # Mock balance = earned - spent + initial balance (1000 MNEE for demo)
-        mock_balance = 1000.0 + total_earned - total_spent
-        
-        return {
-            "address": current_user.public_key,
-            "balance_mnee": float(mock_balance),
-            "balance_wei": str(int(mock_balance * 10**18)),
-            "source": "simulated",
-            "blockchain_error": blockchain_error,
-            "note": "Using simulated balance. To show real balance: 1) Deploy MNEE ERC-20 token, 2) Update MNEE_CONTRACT_ADDRESS in .env, 3) Ensure ETHEREUM_RPC_URL is valid"
-        }
+    # For demo/hackathon: Always use simulated balance
+    # In production, you would check blockchain first
+    
+    # Calculate balance from transactions for demo purposes
+    # Total earned (received payments from OTHER users)
+    total_earned = db.query(func.sum(Transaction.amount_mnee)).filter(
+        Transaction.to_user_id == current_user.id,
+        Transaction.from_user_id != current_user.id,  # Exclude self-transactions
+        Transaction.status.in_(["confirmed", "completed", "pending"])
+    ).scalar() or 0.0
+    
+    # Total spent (sent payments to OTHER users)
+    total_spent = db.query(func.sum(Transaction.amount_mnee)).filter(
+        Transaction.from_user_id == current_user.id,
+        Transaction.to_user_id != current_user.id,  # Exclude self-transactions
+        Transaction.status.in_(["confirmed", "completed", "pending"])
+    ).scalar() or 0.0
+    
+    # Mock balance = earned - spent + initial balance (1000 MNEE for demo)
+    mock_balance = 1000.0 + total_earned - total_spent
+    
+    return {
+        "address": current_user.public_key,
+        "balance_mnee": float(mock_balance),
+        "balance_wei": str(int(mock_balance * 10**18)),
+        "source": "simulated",
+        "note": "Using simulated balance for hackathon demo. Starting balance: 1000 MNEE"
+    }
 
 @router.get("/earnings", response_model=EarningsResponse)
 async def get_earnings(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Get user's earnings from their tools"""
+    """Get user's earnings from their tools (excluding self-transactions)"""
     transactions = db.query(Transaction).filter(
-        Transaction.to_user_id == current_user.id
+        Transaction.to_user_id == current_user.id,
+        Transaction.from_user_id != current_user.id  # Exclude self-transactions
     ).order_by(Transaction.created_at.desc()).all()
     
     total_earned = db.query(func.sum(Transaction.amount_mnee)).filter(
         Transaction.to_user_id == current_user.id,
+        Transaction.from_user_id != current_user.id,  # Exclude self-transactions
         Transaction.status == "confirmed"
     ).scalar() or 0.0
     
@@ -232,13 +210,15 @@ async def get_spending(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Get user's spending on tools"""
+    """Get user's spending on tools (excluding self-transactions)"""
     transactions = db.query(Transaction).filter(
-        Transaction.from_user_id == current_user.id
+        Transaction.from_user_id == current_user.id,
+        Transaction.to_user_id != current_user.id  # Exclude self-transactions
     ).order_by(Transaction.created_at.desc()).all()
     
     total_spent = db.query(func.sum(Transaction.amount_mnee)).filter(
         Transaction.from_user_id == current_user.id,
+        Transaction.to_user_id != current_user.id,  # Exclude self-transactions
         Transaction.status == "confirmed"
     ).scalar() or 0.0
     

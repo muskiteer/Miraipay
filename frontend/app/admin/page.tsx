@@ -36,18 +36,6 @@ export default function AdminPage() {
   const [actionLoading, setActionLoading] = useState<number | null>(null);
 
   useEffect(() => {
-    // Check if user is admin
-    const userData = localStorage.getItem('user');
-    if (!userData) {
-      router.push('/login');
-      return;
-    }
-    
-    const user = JSON.parse(userData);
-    if (!user.is_admin) {
-      router.push('/dashboard');
-      return;
-    }
 
     fetchData();
   }, []);
@@ -71,7 +59,7 @@ export default function AdminPage() {
   const handleApprove = async (toolId: number) => {
     setActionLoading(toolId);
     try {
-      await api.post(`/api/admin/tools/${toolId}/approve`);
+      await api.post(`/api/admin/approve-tool/${toolId}`);
       setPendingTools((prev) => prev.filter((t) => t.id !== toolId));
     } catch (error) {
       setError('Failed to approve tool');
@@ -83,7 +71,7 @@ export default function AdminPage() {
   const handleReject = async (toolId: number) => {
     setActionLoading(toolId);
     try {
-      await api.delete(`/api/admin/tools/${toolId}`);
+      await api.post(`/api/admin/reject-tool/${toolId}`);
       setPendingTools((prev) => prev.filter((t) => t.id !== toolId));
     } catch (error) {
       setError('Failed to reject tool');

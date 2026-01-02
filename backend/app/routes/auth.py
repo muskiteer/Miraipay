@@ -31,7 +31,8 @@ async def register(user_data: UserCreate, db: Session = Depends(get_db)):
         email=user_data.email,
         hashed_password=get_password_hash(user_data.password),
         public_key=public_key,
-        encrypted_private_key=encrypted_private_key
+        encrypted_private_key=encrypted_private_key,
+        wallet_address=public_key  # Set wallet address same as public key for now
     )
     
     db.add(user)

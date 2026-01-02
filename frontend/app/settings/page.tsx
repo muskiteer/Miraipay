@@ -123,8 +123,8 @@ export default function SettingsPage() {
                   <Key className="w-6 h-6 text-white" />
                 </div>
                 <div>
-                  <h2 className="text-2xl font-bold text-white">Groq API Key</h2>
-                  <p className="text-gray-400 text-sm">Configure your Groq API key for AI agent functionality</p>
+                  <h2 className="text-2xl font-bold text-white">Google Gemini API Key</h2>
+                  <p className="text-gray-400 text-sm">Configure your Gemini API key for AI agent functionality</p>
                 </div>
               </div>
 
@@ -164,19 +164,19 @@ export default function SettingsPage() {
                     type="password"
                     value={groqApiKey}
                     onChange={(e) => setGroqApiKey(e.target.value)}
-                    placeholder="gsk_..."
+                    placeholder="AIza..."
                     className="w-full px-4 py-3 bg-gray-900/50 border border-gray-600 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all"
                     disabled={isLoading}
                   />
                   <p className="mt-2 text-sm text-gray-400">
                     Get your API key from{" "}
                     <a
-                      href="https://console.groq.com/keys"
+                      href="https://aistudio.google.com/app/apikey"
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-purple-400 hover:text-purple-300 underline"
                     >
-                      Groq Console
+                      Google AI Studio
                     </a>
                   </p>
                 </div>
@@ -234,7 +234,7 @@ export default function SettingsPage() {
               <div className="space-y-3">
                 <div className="flex justify-between items-center p-4 bg-gray-900/50 rounded-lg border border-gray-700">
                   <span className="text-gray-300">Default Model</span>
-                  <span className="text-white font-mono bg-gray-800 px-3 py-1 rounded-lg">llama-3.1-70b-versatile</span>
+                  <span className="text-white font-mono bg-gray-800 px-3 py-1 rounded-lg">gemini-2.5-flash (Free)</span>
                 </div>
                 <div className="flex justify-between items-center p-4 bg-gray-900/50 rounded-lg border border-gray-700">
                   <span className="text-gray-300">Temperature</span>

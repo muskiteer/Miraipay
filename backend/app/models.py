@@ -11,6 +11,7 @@ class User(Base):
     hashed_password = Column(String, nullable=False)
     public_key = Column(String, unique=True, nullable=False)  # Ethereum address
     encrypted_private_key = Column(Text, nullable=False)
+    wallet_address = Column(String(42), nullable=True)  # User's wallet address for payments
     groq_api_key = Column(Text, nullable=True)  # Encrypted Groq API key
     is_admin = Column(Boolean, default=False)
     created_at = Column(DateTime, default=datetime.utcnow)

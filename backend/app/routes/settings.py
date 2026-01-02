@@ -9,7 +9,7 @@ from app.database import get_db
 from app.models import User
 from app.security import get_current_user
 from app.crypto import encrypt_data, get_encryption_key
-from app.groq_service import validate_groq_api_key
+from app.groq_service import validate_gemini_api_key
 
 router = APIRouter()
 
@@ -30,11 +30,11 @@ async def save_groq_api_key(
     current_user: User = Depends(get_current_user)
 ):
     """
-    Save or update user's Groq API key (encrypted)
+    Save or update user's Gemini API key (encrypted)
     """
     try:
         # Validate the API key first
-        is_valid, validation_message = validate_groq_api_key(request.api_key)
+        is_valid, validation_message = validate_gemini_api_key(request.api_key)
         
         if not is_valid:
             raise HTTPException(status_code=400, detail=validation_message)
@@ -49,7 +49,7 @@ async def save_groq_api_key(
         
         return GroqAPIKeyResponse(
             has_key=True,
-            message="Groq API key saved successfully"
+            message="Gemini API key saved successfully"
         )
         
     except HTTPException:
@@ -65,7 +65,7 @@ async def check_groq_api_key(
     current_user: User = Depends(get_current_user)
 ):
     """
-    Check if user has configured a Groq API key (don't return the actual key)
+    Check if user has configured a Gemini API key (don't return the actual key)
     """
     has_key = current_user.groq_api_key is not None and current_user.groq_api_key != ""
     
@@ -81,7 +81,7 @@ async def delete_groq_api_key(
     current_user: User = Depends(get_current_user)
 ):
     """
-    Delete user's Groq API key
+    Delete user's Gemini API key
     """
     try:
         current_user.groq_api_key = None
@@ -89,7 +89,7 @@ async def delete_groq_api_key(
         
         return GroqAPIKeyResponse(
             has_key=False,
-            message="Groq API key deleted successfully"
+            message="Gemini API key deleted successfully"
         )
         
     except Exception as e:

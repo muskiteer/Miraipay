@@ -33,9 +33,12 @@ def create_access_token(data: dict) -> str:
 
 def decode_access_token(token: str) -> dict:
     try:
+        print(f"Attempting to decode token: {token[:20]}...")
         payload = jwt.decode(token, settings.secret_key, algorithms=[ALGORITHM])
+        print(f"Token decoded successfully. Payload: {payload}")
         return payload
-    except JWTError:
+    except JWTError as e:
+        print(f"JWT decode error: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Could not validate credentials",
@@ -45,24 +48,33 @@ async def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(security),
     db: Session = Depends(get_db)
 ) -> User:
-    token = credentials.credentials
-    payload = decode_access_token(token)
-    email: str = payload.get("sub")
-    
-    if email is None:
+    try:
+        print(f"Auth header received: {credentials.scheme} {credentials.credentials[:20]}...")
+        token = credentials.credentials
+        payload = decode_access_token(token)
+        email: str = payload.get("sub")
+        
+        if email is None:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Could not validate credentials - no email in token",
+            )
+        
+        user = db.query(User).filter(User.email == email).first()
+        if user is None:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="User not found",
+            )
+        
+        print(f"User authenticated successfully: {user.email}")
+        return user
+    except Exception as e:
+        print(f"Auth error: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Could not validate credentials",
+            detail=f"Authentication failed: {str(e)}",
         )
-    
-    user = db.query(User).filter(User.email == email).first()
-    if user is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="User not found",
-        )
-    
-    return user
 
 async def get_current_admin_user(current_user: User = Depends(get_current_user)) -> User:
     if not current_user.is_admin:

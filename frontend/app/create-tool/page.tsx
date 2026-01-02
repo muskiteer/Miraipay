@@ -60,7 +60,7 @@ export default function CreateToolPage() {
         price_mnee: parseFloat(formData.price_mnee),
       };
 
-      await api.post('/api/tools', payload);
+      await api.post('/api/tools/', payload);
       setSuccess(true);
       
       // Redirect to tools page after 2 seconds

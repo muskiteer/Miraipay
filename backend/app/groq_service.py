@@ -1,11 +1,11 @@
 """
-Groq LLM Integration Service
+Google Gemini LLM Integration Service
 Handles tool formatting, LLM calls, and response generation
 """
 
 import json
 from typing import List, Dict, Any, Optional
-from groq import Groq
+import google.generativeai as genai
 from app.models import Tool
 from app.crypto import decrypt_data
 
@@ -73,22 +73,22 @@ If no tool is appropriate, respond with:
 }}"""
 
 
-def call_groq_for_tool_selection(
+def call_gemini_for_tool_selection(
     user_message: str,
     tools_json: str,
     encrypted_api_key: str,
     encryption_key: bytes,
-    model: str = "llama-3.1-70b-versatile"
+    model: str = "gemini-2.5-flash"
 ) -> Dict[str, Any]:
     """
-    Call Groq LLM to select appropriate tool
+    Call Google Gemini LLM to select appropriate tool
     
     Args:
         user_message: User's query
         tools_json: Formatted tools JSON string
-        encrypted_api_key: User's encrypted Groq API key
+        encrypted_api_key: User's encrypted Gemini API key
         encryption_key: Encryption key for decryption
-        model: Groq model to use
+        model: Gemini model to use
         
     Returns:
         Dict with tool selection info: {tool_id, tool_name, reasoning, parameters}
@@ -97,31 +97,27 @@ def call_groq_for_tool_selection(
         # Decrypt API key
         api_key = decrypt_data(encrypted_api_key, encryption_key)
         
-        # Initialize Groq client
-        client = Groq(api_key=api_key)
+        # Configure Gemini
+        genai.configure(api_key=api_key)
         
         # Create prompt
         prompt = create_tool_selection_prompt(user_message, tools_json)
         
-        # Call Groq
-        chat_completion = client.chat.completions.create(
-            messages=[
-                {
-                    "role": "system",
-                    "content": "You are a helpful AI assistant that selects the best tool for user requests."
-                },
-                {
-                    "role": "user",
-                    "content": prompt
-                }
-            ],
-            model=model,
-            temperature=0.3,
-            max_tokens=500
+        # Initialize model
+        gemini_model = genai.GenerativeModel(
+            model_name=model,
+            generation_config={
+                "temperature": 0.3,
+                "max_output_tokens": 500,
+            }
         )
         
+        # Call Gemini
+        full_prompt = "You are a helpful AI assistant that selects the best tool for user requests.\n\n" + prompt
+        response = gemini_model.generate_content(full_prompt)
+        
         # Parse response
-        response_text = chat_completion.choices[0].message.content
+        response_text = response.text
         
         # Extract JSON from response (handle markdown code blocks)
         if "```json" in response_text:
@@ -146,7 +142,7 @@ def call_groq_for_tool_selection(
             "tool_name": None,
             "reasoning": f"Error calling Groq: {str(e)}",
             "parameters": {},
-            "error": "groq_api_error"
+            "error": "gemini_api_error"
         }
 
 
@@ -157,7 +153,7 @@ def generate_final_response(
     encrypted_api_key: str,
     encryption_key: bytes,
     error_message: Optional[str] = None,
-    model: str = "llama-3.1-70b-versatile"
+    model: str = "gemini-2.5-flash"
 ) -> str:
     """
     Generate final natural language response based on tool execution
@@ -166,10 +162,10 @@ def generate_final_response(
         user_message: Original user query
         tool_name: Name of tool that was used
         tool_result: Result from tool execution
-        encrypted_api_key: User's encrypted Groq API key
+        encrypted_api_key: User's encrypted Gemini API key
         encryption_key: Encryption key for decryption
         error_message: Optional error message if tool failed
-        model: Groq model to use
+        model: Gemini model to use
         
     Returns:
         Natural language response string
@@ -178,8 +174,8 @@ def generate_final_response(
         # Decrypt API key
         api_key = decrypt_data(encrypted_api_key, encryption_key)
         
-        # Initialize Groq client
-        client = Groq(api_key=api_key)
+        # Configure Gemini
+        genai.configure(api_key=api_key)
         
         # Create context prompt
         if error_message:
@@ -194,7 +190,14 @@ Please apologize to the user and explain what went wrong in a friendly, helpful 
 We used the tool "{tool_name}" and got this result:
 {json.dumps(tool_result, indent=2)}
 
-Please summarize this result in a natural, conversational way that directly answers the user's question."""
+IMPORTANT: When summarizing prices or payments:
+- ALWAYS mention the MNEE token payment if this was a paid tool
+- Show booking IDs, confirmation numbers, and reference codes prominently
+- If there's a QR code or confirmation link, mention it
+- Focus on the key details like seats, times, locations
+- Keep USD prices secondary or omit them if MNEE amount is shown
+
+Please summarize this result in a natural, conversational way that directly answers the user's question and highlights the successful transaction."""
         else:
             context = f"""The user asked: "{user_message}"
 
@@ -202,24 +205,20 @@ Unfortunately, we don't have an appropriate tool to handle this request.
 
 Please politely inform the user that we cannot help with this specific request at the moment, and suggest they try a different query."""
         
-        # Call Groq for final response
-        chat_completion = client.chat.completions.create(
-            messages=[
-                {
-                    "role": "system",
-                    "content": "You are a helpful AI assistant. Provide clear, concise, and friendly responses."
-                },
-                {
-                    "role": "user",
-                    "content": context
-                }
-            ],
-            model=model,
-            temperature=0.7,
-            max_tokens=1000
+        # Initialize model
+        gemini_model = genai.GenerativeModel(
+            model_name=model,
+            generation_config={
+                "temperature": 0.7,
+                "max_output_tokens": 1000,
+            }
         )
         
-        return chat_completion.choices[0].message.content
+        # Call Gemini for final response
+        full_prompt = "You are a helpful AI assistant. Provide clear, concise, and friendly responses.\n\n" + context
+        response = gemini_model.generate_content(full_prompt)
+        
+        return response.text
         
     except Exception as e:
         # Fallback response if LLM fails
@@ -231,30 +230,24 @@ Please politely inform the user that we cannot help with this specific request a
             return "I apologize, but I'm unable to help with that request at the moment."
 
 
-def validate_groq_api_key(api_key: str) -> tuple[bool, str]:
+def validate_gemini_api_key(api_key: str) -> tuple[bool, str]:
     """
-    Validate a Groq API key by making a test call
+    Validate a Google Gemini API key by making a test call
     
     Args:
-        api_key: The Groq API key to validate
+        api_key: The Gemini API key to validate
         
     Returns:
         Tuple of (is_valid, message)
     """
     try:
-        client = Groq(api_key=api_key)
+        genai.configure(api_key=api_key)
+        
+        # Initialize model
+        model = genai.GenerativeModel("gemini-2.5-flash")
         
         # Make a simple test call
-        chat_completion = client.chat.completions.create(
-            messages=[
-                {
-                    "role": "user",
-                    "content": "Say 'OK' if you can read this."
-                }
-            ],
-            model="llama-3.1-70b-versatile",
-            max_tokens=10
-        )
+        response = model.generate_content("Say 'OK' if you can read this.")
         
         return True, "API key is valid"
         

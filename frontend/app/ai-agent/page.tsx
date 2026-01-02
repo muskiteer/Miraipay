@@ -20,7 +20,8 @@ export default function AIAgentPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
-  const [hasGroqKey, setHasGroqKey] = useState(false);
+  const [isExecutingTool, setIsExecutingTool] = useState(false);
+  const [hasGeminiKey, setHasGeminiKey] = useState(false);
   const [checkingKey, setCheckingKey] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -32,8 +33,8 @@ export default function AIAgentPage() {
       return;
     }
 
-    // Check if Groq API key is configured
-    checkGroqKey();
+    // Check if Gemini API key is configured
+    checkGeminiKey();
   }, []);
 
   useEffect(() => {
@@ -44,26 +45,26 @@ export default function AIAgentPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  const checkGroqKey = async () => {
+  const checkGeminiKey = async () => {
     try {
       const response = await api.get('/api/settings/groq');
-      setHasGroqKey(response.data.has_key);
+      setHasGeminiKey(response.data.has_key);
       if (!response.data.has_key) {
         setMessages([{
           role: 'assistant',
-          content: '⚠️ Please configure your Groq API key in Settings to use the AI Agent.',
+          content: '⚠️ Please configure your Gemini API key in Settings to use the AI Agent.',
           timestamp: new Date()
         }]);
       }
     } catch (error) {
-      console.error('Error checking Groq key:', error);
+      console.error('Error checking Gemini key:', error);
     } finally {
       setCheckingKey(false);
     }
   };
 
   const sendMessage = async () => {
-    if (!input.trim() || loading || !hasGroqKey) return;
+    if (!input.trim() || loading || !hasGeminiKey) return;
 
     const userMessage: Message = {
       role: 'user',
@@ -77,23 +78,41 @@ export default function AIAgentPage() {
 
     try {
       const response = await api.post('/api/agent/chat', {
-        user_message: input
+        message: input
       });
+
+      // Check if a tool was used to show appropriate loading message
+      if (response.data.tool_used) {
+        setIsExecutingTool(true);
+      }
 
       const assistantMessage: Message = {
         role: 'assistant',
-        content: response.data.final_response,
-        toolUsed: response.data.tool_selected,
+        content: response.data.response,
+        toolUsed: response.data.tool_used,
         pricePaid: response.data.price_paid,
-        txHash: response.data.tx_hash,
+        txHash: response.data.transaction_hash,
         timestamp: new Date()
       };
 
       setMessages(prev => [...prev, assistantMessage]);
+      setIsExecutingTool(false);
     } catch (error: any) {
+      setIsExecutingTool(false);
+      let errorMsg = 'Failed to process your request. Please try again.';
+      
+      // Handle different error response formats
+      if (error.response?.data?.detail) {
+        if (typeof error.response.data.detail === 'string') {
+          errorMsg = error.response.data.detail;
+        } else if (Array.isArray(error.response.data.detail)) {
+          errorMsg = error.response.data.detail.map((e: any) => e.msg).join(', ');
+        }
+      }
+      
       const errorMessage: Message = {
         role: 'assistant',
-        content: error.response?.data?.detail || 'Failed to process your request. Please try again.',
+        content: errorMsg,
         timestamp: new Date()
       };
       setMessages(prev => [...prev, errorMessage]);
@@ -143,7 +162,7 @@ export default function AIAgentPage() {
         {/* Messages Container */}
         <div className="flex-1 overflow-y-auto px-6 py-8">
           <div className="max-w-4xl mx-auto space-y-6">
-            {messages.length === 0 && hasGroqKey && (
+            {messages.length === 0 && hasGeminiKey && (
               <div className="text-center py-12">
                 <div className="bg-white/5 backdrop-blur-xl rounded-2xl p-8 border border-white/10">
                   <Bot className="h-16 w-16 text-indigo-400 mx-auto mb-4" />
@@ -234,9 +253,21 @@ export default function AIAgentPage() {
             {loading && (
               <div className="flex justify-start">
                 <div className="bg-white/10 backdrop-blur-xl border border-white/10 rounded-2xl p-4 shadow-lg">
-                  <div className="flex items-center gap-3">
-                    <Loader2 className="h-5 w-5 text-indigo-400 animate-spin" />
-                    <span className="text-sm text-gray-300">AI is thinking...</span>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-3">
+                      <Loader2 className="h-5 w-5 text-indigo-400 animate-spin" />
+                      <span className="text-sm text-gray-300">
+                        {isExecutingTool ? 'Executing tool...' : 'AI is thinking...'}
+                      </span>
+                    </div>
+                    {isExecutingTool && (
+                      <div className="flex items-start gap-2 pl-8">
+                        <AlertCircle className="h-4 w-4 text-yellow-400 flex-shrink-0 mt-0.5" />
+                        <p className="text-xs text-yellow-300/80">
+                          First request may take up to 2 minutes as the service wakes up. Subsequent requests will be faster.
+                        </p>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -249,12 +280,12 @@ export default function AIAgentPage() {
         {/* Input Area */}
         <div className="bg-black/30 backdrop-blur-xl border-t border-white/10 px-6 py-4">
           <div className="max-w-4xl mx-auto">
-            {!hasGroqKey ? (
+            {!hasGeminiKey ? (
               <div className="bg-yellow-500/20 border border-yellow-500/30 rounded-lg p-4 flex items-start gap-3">
                 <AlertCircle className="h-5 w-5 text-yellow-400 flex-shrink-0 mt-0.5" />
                 <div className="flex-1">
                   <p className="text-sm text-yellow-300 mb-2">
-                    Configure your Groq API key to start using the AI Agent
+                    Configure your Gemini API key to start using the AI Agent
                   </p>
                   <button
                     onClick={() => router.push('/settings')}
