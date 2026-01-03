@@ -22,7 +22,7 @@ Three stat cards showing:
 - Complete list of all transactions (sent and received)
 - Each transaction shows:
   - Type icon (↗️ received / ↙️ sent)
-  - Tool name
+  - 
   - Status badge (completed/pending)
   - Timestamp
   - Transaction hash with Etherscan link

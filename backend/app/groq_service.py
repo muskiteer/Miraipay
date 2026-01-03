@@ -103,21 +103,49 @@ def call_gemini_for_tool_selection(
         # Create prompt
         prompt = create_tool_selection_prompt(user_message, tools_json)
         
-        # Initialize model
+        # Initialize model with increased token limit
         gemini_model = genai.GenerativeModel(
             model_name=model,
             generation_config={
                 "temperature": 0.3,
-                "max_output_tokens": 500,
+                "max_output_tokens": 2048,
             }
         )
         
-        # Call Gemini
-        full_prompt = "You are a helpful AI assistant that selects the best tool for user requests.\n\n" + prompt
+        # Call Gemini with strict JSON instruction
+        full_prompt = "You are a helpful AI assistant that selects the best tool for user requests. You MUST respond with ONLY valid JSON. Do NOT use markdown code blocks. Do NOT add explanations. Just pure JSON.\n\n" + prompt
         response = gemini_model.generate_content(full_prompt)
         
         # Parse response
-        response_text = response.text
+        response_text = response.text.strip()
+        
+        # Check if response looks incomplete
+        if not response_text.endswith('}'):
+            print(f"=== WARNING: Response may be truncated ===")
+            print(f"Response: {response_text}")
+            print("===========================================")
+            # Try to find the last complete JSON object
+            try:
+                # Find last complete opening brace
+                depth = 0
+                last_valid_pos = -1
+                for i, char in enumerate(response_text):
+                    if char == '{':
+                        depth += 1
+                    elif char == '}':
+                        depth -= 1
+                        if depth == 0:
+                            last_valid_pos = i + 1
+                
+                if last_valid_pos > 0:
+                    response_text = response_text[:last_valid_pos]
+            except:
+                pass
+        
+        # Debug log
+        print(f"=== Gemini Raw Response ===")
+        print(response_text)
+        print("===========================")
         
         # Extract JSON from response (handle markdown code blocks)
         if "```json" in response_text:
@@ -129,6 +157,10 @@ def call_gemini_for_tool_selection(
         return selection
         
     except json.JSONDecodeError as e:
+        print(f"=== JSON Decode Error ===")
+        print(f"Error: {str(e)}")
+        print(f"Raw text: {response_text if 'response_text' in locals() else 'N/A'}")
+        print("=========================")
         return {
             "tool_id": None,
             "tool_name": None,

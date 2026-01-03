@@ -148,12 +148,15 @@ async def execute_tool(
                 db.commit()
                 print(f"Transaction recorded in database")
                 
-                # Add payment proof to request body
+                # Add payment proof to request body and header
                 body['payment_proof'] = tx_hash
                 
-                # Retry the request with payment proof
-                headers['X-Payment-Proof'] = tx_hash
-                print(f"Retrying request with payment proof in body and header")
+                # Retry the request with payment proof (multiple header formats for compatibility)
+                headers['X-Payment-Proof'] = tx_hash  # Movie API format
+                headers['Payment-Proof'] = tx_hash  # Golang standard
+                headers['payment-proof'] = tx_hash  # Lowercase
+                headers['payment_proof'] = tx_hash  # Underscore
+                print(f"Retrying request with payment proof: {tx_hash}")
                 
                 # Retry with same extended timeout for cold starts
                 async with httpx.AsyncClient(timeout=120.0) as client:

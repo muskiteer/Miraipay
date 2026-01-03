@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { Bot, Send, Loader2, ExternalLink, CheckCircle, AlertCircle, Coins, Wrench } from 'lucide-react';
+import { Bot, Send, Loader2, ExternalLink, CheckCircle, AlertCircle, Coins, Wrench, Download } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import api from '@/lib/api';
 
@@ -10,6 +10,7 @@ interface Message {
   role: 'user' | 'assistant';
   content: string;
   toolUsed?: string;
+  toolResult?: any;
   pricePaid?: number;
   txHash?: string;
   timestamp: Date;
@@ -90,6 +91,7 @@ export default function AIAgentPage() {
         role: 'assistant',
         content: response.data.response,
         toolUsed: response.data.tool_used,
+        toolResult: response.data.tool_result,
         pricePaid: response.data.price_paid,
         txHash: response.data.transaction_hash,
         timestamp: new Date()
@@ -207,7 +209,109 @@ export default function AIAgentPage() {
                     </div>
                   )}
                   
-                  <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                  {/* Render tool results */}
+                  {message.role === 'assistant' && message.toolResult ? (
+                    <>
+                      {/* QR Code Generator Result */}
+                      {message.toolResult.qr_code && (
+                        <div className="space-y-3">
+                          <div className="bg-white p-4 rounded-lg inline-block">
+                            <img 
+                              src={message.toolResult.qr_code} 
+                              alt="Generated QR Code"
+                              className="w-64 h-64 object-contain"
+                            />
+                          </div>
+                          <button
+                            onClick={() => {
+                              const link = document.createElement('a')
+                              link.href = message.toolResult.qr_code
+                              link.download = 'qr-code.png'
+                              link.click()
+                            }}
+                            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-lg text-sm font-medium transition-all shadow-lg hover:shadow-xl"
+                          >
+                            <Download className="h-4 w-4" />
+                            Download QR Code
+                          </button>
+                        </div>
+                      )}
+                      
+                      {/* Movie Booking Result */}
+                      {message.toolResult.booking_id && (
+                        <div className="space-y-3">
+                          <div className="bg-gradient-to-br from-purple-900/30 to-indigo-900/30 border border-purple-500/30 rounded-lg p-4 space-y-3">
+                            <div className="flex items-center justify-between">
+                              <h3 className="text-lg font-bold text-purple-300">🎬 {message.toolResult.movie}</h3>
+                              <span className="text-xs bg-green-500/20 text-green-300 px-2 py-1 rounded">Confirmed</span>
+                            </div>
+                            
+                            <div className="grid grid-cols-2 gap-3 text-sm">
+                              <div>
+                                <p className="text-gray-400">Theater</p>
+                                <p className="text-white font-semibold">{message.toolResult.theater}</p>
+                              </div>
+                              <div>
+                                <p className="text-gray-400">City</p>
+                                <p className="text-white font-semibold">{message.toolResult.city}</p>
+                              </div>
+                              <div>
+                                <p className="text-gray-400">Date</p>
+                                <p className="text-white font-semibold">{message.toolResult.date}</p>
+                              </div>
+                              <div>
+                                <p className="text-gray-400">Showtime</p>
+                                <p className="text-white font-semibold">{message.toolResult.showtime}</p>
+                              </div>
+                            </div>
+                            
+                            <div className="border-t border-white/10 pt-3">
+                              <p className="text-gray-400 text-sm mb-1">Seats</p>
+                              <div className="flex flex-wrap gap-2">
+                                {message.toolResult.seats?.map((seat: string) => (
+                                  <span key={seat} className="bg-indigo-500/30 text-indigo-200 px-3 py-1 rounded text-sm font-mono">
+                                    {seat}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                            
+                            <div className="flex justify-between items-center border-t border-white/10 pt-3">
+                              {/*
+                              <div>
+                                <p className="text-gray-400 text-xs">Total Price</p>
+                                <p className="text-2xl font-bold text-yellow-400">${message.toolResult.total_price}</p>
+                                <p className="text-xs text-gray-400">{message.toolResult.total_tickets} tickets × ${message.toolResult.price_per_ticket}</p>
+                              </div>
+                             */ }
+                              <div className="text-right">
+                                <p className="text-gray-400 text-xs">Booking ID</p>
+                                <p className="text-sm font-mono text-purple-300">{message.toolResult.booking_id}</p>
+                              </div>
+                            </div>
+                            
+                            {message.toolResult.qr_code_url && (
+                              <div className="border-t border-white/10 pt-3">
+                                <p className="text-gray-400 text-xs mb-2">Ticket QR Code</p>
+                                <img 
+                                  src={message.toolResult.qr_code_url} 
+                                  alt="Booking QR Code"
+                                  className="w-40 h-40 bg-white p-2 rounded"
+                                />
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                      
+                      {/* Show text response only if no special result format */}
+                      {!message.toolResult.qr_code && !message.toolResult.booking_id && (
+                        <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                      )}
+                    </>
+                  ) : (
+                    <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                  )}
                   
                   {message.toolUsed && (
                     <div className="mt-3 pt-3 border-t border-white/20 space-y-2">
