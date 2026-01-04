@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from app.database import engine, Base
-from app.routes import auth, tools, payments, admin, mcp, settings, agent, demo
+from app.routes import auth, tools, payments, admin, mcp, settings as settings_router, agent, demo
 from app.config import get_settings
 
 @asynccontextmanager
@@ -42,7 +42,7 @@ app.include_router(tools.router, prefix="/api/tools", tags=["Tools"])
 app.include_router(payments.router, prefix="/api/payments", tags=["Payments"])
 app.include_router(admin.router, prefix="/api/admin", tags=["Admin"])
 app.include_router(mcp.router, prefix="/mcp", tags=["MCP Server"])
-app.include_router(settings.router, prefix="/api/settings", tags=["Settings"])
+app.include_router(settings_router.router, prefix="/api/settings", tags=["Settings"])
 app.include_router(agent.router, prefix="/api/agent", tags=["AI Agent"])
 app.include_router(demo.router, prefix="/api/demo", tags=["Demo Tools"])
 
