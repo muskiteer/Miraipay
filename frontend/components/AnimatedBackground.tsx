@@ -120,11 +120,16 @@ const AnimatedShaderBackground = () => {
   }, []);
 
   return (
-    <div 
-      ref={containerRef} 
-      className="fixed inset-0 w-full h-full -z-10"
-      style={{ pointerEvents: 'none' }}
-    />
+    <>
+      {/* Dark base layer for consistent background */}
+      <div className="fixed inset-0 w-full h-full -z-20 bg-gradient-to-br from-gray-900 via-purple-900 to-violet-900" />
+      {/* Animated shader layer */}
+      <div 
+        ref={containerRef} 
+        className="fixed inset-0 w-full h-full -z-10"
+        style={{ pointerEvents: 'none' }}
+      />
+    </>
   );
 };
 
