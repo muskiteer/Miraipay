@@ -35,7 +35,7 @@ export default function ToolGuidePage() {
             <h1 className="text-5xl font-bold text-white">Tool Creation Guide</h1>
           </div>
           <p className="text-xl text-gray-300 max-w-3xl mx-auto">
-            Learn how to build X402-compatible tools that work seamlessly with StableTool's AI agent
+            Learn how to build X402-compatible tools that work seamlessly with Miraipay's AI agent
             and earn MNEE tokens from every interaction.
           </p>
         </div>
@@ -73,7 +73,7 @@ export default function ToolGuidePage() {
               </div>
               <h3 className="text-xl font-semibold text-white mb-2">Register & Earn</h3>
               <p className="text-gray-300">
-                Submit your tool to StableTool's registry. Once approved, 
+                Submit your tool to Miraipay's registry. Once approved, 
                 earn MNEE tokens every time the AI agent uses your tool.
               </p>
             </div>
@@ -246,7 +246,7 @@ async def your_tool_endpoint(
           </h2>
           <div className="bg-white/10 backdrop-blur-lg rounded-xl p-8 border border-purple-500/20">
             <p className="text-gray-300 mb-6">
-              When registering your tool on StableTool, provide this JSON metadata:
+              When registering your tool on Miraipay, provide this JSON metadata:
             </p>
             
             <div className="relative">
@@ -477,7 +477,7 @@ async def your_tool_endpoint(
                 <li>• Always validate the transaction hash format (0x followed by 64 hex chars)</li>
                 <li>• In production, verify the payment on-chain before delivering service</li>
                 <li>• Include detailed error messages for common failure cases</li>
-                <li>• Test with the StableTool AI agent before going live</li>
+                <li>• Test with the Miraipay AI agent before going live</li>
                 <li>• Monitor your wallet for incoming MNEE payments</li>
               </ul>
             </div>
@@ -609,7 +609,7 @@ async def your_tool_endpoint(
                 <Rocket className="h-6 w-6 text-purple-400" />
                 <div>
                   <div className="text-white font-semibold">Submit Your Tool</div>
-                  <div className="text-gray-400 text-sm">Register on StableTool</div>
+                  <div className="text-gray-400 text-sm">Register on Miraipay</div>
                 </div>
               </a>
             </div>

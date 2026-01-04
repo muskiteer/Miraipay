@@ -51,7 +51,7 @@ export default function LoginPage() {
               <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
                 <Wallet className="w-6 h-6 text-white" />
               </div>
-              <span className="text-2xl font-bold text-gray-900">StableTool</span>
+              <span className="text-2xl font-bold text-gray-900">Miraipay</span>
             </Link>
             
             <h2 className="text-3xl font-bold text-gray-900 mb-2">

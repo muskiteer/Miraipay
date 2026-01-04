@@ -8,7 +8,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "StableTool - AI Agent Tool Marketplace",
+  title: "Miraipay - AI Agent Tool Marketplace",
   description: "MCP Server with MNEE Stablecoin Payments for AI Agents",
 };
 

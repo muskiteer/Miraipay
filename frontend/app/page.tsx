@@ -16,7 +16,7 @@ export default function Home() {
         <div className="text-center max-w-5xl mx-auto">
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-md border border-white/20 mb-8">
             <Sparkles className="h-4 w-4 text-yellow-300" />
-            <span className="text-white/90 text-sm font-medium">Powered by MNEE Stablecoin & X402 Protocol</span>
+            <span className="text-white/90 text-sm font-medium">Powered by X402 Protocol</span>
           </div>
           
           <h1 className="text-6xl md:text-7xl font-bold text-white mb-6 leading-tight">
@@ -146,7 +146,7 @@ export default function Home() {
             Start Earning Today
           </h2>
           <p className="text-xl text-white/80 mb-10 max-w-2xl mx-auto">
-            Join developers already monetizing their APIs with StableTool
+            Join developers already monetizing their APIs with Miraipay
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link

@@ -63,7 +63,7 @@ export default function RegisterPage() {
               <div className="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center border border-white/40">
                 <Wrench className="w-7 h-7" />
               </div>
-              <span className="text-3xl font-bold">StableTool</span>
+              <span className="text-3xl font-bold">Miraipay</span>
             </Link>
             
             <h1 className="text-5xl font-bold leading-tight drop-shadow-lg">
