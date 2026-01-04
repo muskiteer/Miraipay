@@ -86,6 +86,7 @@ export default function RegisterPage() {
                   </p>
                 </div>
               </div>
+              <br />
               
               <div className="flex items-start gap-3">
                 <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-400 to-indigo-600 flex items-center justify-center flex-shrink-0">
@@ -96,8 +97,10 @@ export default function RegisterPage() {
                   <p className="text-white/80">
                     AES-256 encryption keeps your private keys safe and secure
                   </p>
+                  
                 </div>
               </div>
+              <br />
               
               <div className="flex items-start gap-3">
                 <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-400 to-pink-600 flex items-center justify-center flex-shrink-0">
@@ -112,12 +115,7 @@ export default function RegisterPage() {
               </div>
             </div>
 
-            <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-xl p-6 mt-8">
-              <p className="text-white/90 text-sm">
-                ✨ <strong>Bonus:</strong> First 1000 users get priority tool approval and
-                featured placement in the marketplace!
-              </p>
-            </div>
+            
           </div>
 
           {/* Right Side - Registration Form */}

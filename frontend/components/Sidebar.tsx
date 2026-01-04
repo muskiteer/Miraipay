@@ -77,7 +77,7 @@ export default function Sidebar({ user, onLogout }: SidebarProps) {
             <Wrench className="w-6 h-6" />
           </div>
           <div>
-            <h1 className="text-xl font-bold">StableTool</h1>
+            <h1 className="text-xl font-bold">Miraipay</h1>
             <p className="text-xs text-white/60">Tool Marketplace</p>
           </div>
         </Link>
