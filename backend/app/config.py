@@ -8,6 +8,7 @@ class Settings(BaseSettings):
     ethereum_rpc_url: str
     mnee_contract_address: str = "0x8ccedbAe4916b79da7F3F612EfB2EB93A2bFD6cF"
     admin_email: str
+    frontend_url: str = "http://localhost:3000"
     
     class Config:
         env_file = ".env"

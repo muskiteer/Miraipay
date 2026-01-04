@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from app.database import engine, Base
 from app.routes import auth, tools, payments, admin, mcp, settings, agent, demo
+from app.config import get_settings
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -19,9 +20,11 @@ app = FastAPI(
 )
 
 # CORS middleware
+settings = get_settings()
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
+        settings.frontend_url,
         "http://localhost:3000",
         "http://127.0.0.1:3000",
         "http://localhost:3001",
