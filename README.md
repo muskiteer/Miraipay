@@ -246,5 +246,3 @@ This project was built for the MNEE Hackathon. Feel free to fork and extend!
 For questions or issues, please open a GitHub issue.
 
 ---
-
-**Built with ❤️ for MNEE Hackathon 2026**
