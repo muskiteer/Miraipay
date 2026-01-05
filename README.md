@@ -2,7 +2,7 @@
 
 **AI-Powered Tool Marketplace with MNEE Token Payments**
 
-Miraipay is a decentralized platform where users can discover, create, and monetize AI tools using the X402 payment protocol. Built for the MNEE Hackathon 2026.
+Miraipay is a decentralized platform where users can discover, create, and monetize AI tools using the X402 payment protocol.
 
 ---
 
@@ -227,17 +227,8 @@ async def your_tool(payment_proof: str = Header(None)):
     return {"result": "success"}
 ```
 
----
-
-## 📝 License
-
-MIT License - Built for MNEE Hackathon 2026
-
----
-
 ## 🤝 Contributing
-
-This project was built for the MNEE Hackathon. Feel free to fork and extend!
+Feel free to fork and extend!
 
 ---
 
