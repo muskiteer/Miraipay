@@ -44,12 +44,12 @@ interface Transaction {
   from_user?: { email: string };
   to_user?: { email: string };
   tool?: { name: string };
+  tool_name?: string;  // ← Add this line
   amount_mnee: string;
   tx_hash: string;
   status: string;
   created_at: string;
 }
-
 export default function DashboardPage() {
   const [balance, setBalance] = useState("0.00");
   const [totalEarned, setTotalEarned] = useState("0.00");
