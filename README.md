@@ -1,4 +1,4 @@
-# Miraipay 🛠️
+# Miraipay
 
 **AI-Powered Tool Marketplace with MNEE Token Payments**
 
