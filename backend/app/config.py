@@ -1,7 +1,7 @@
 from pydantic_settings import BaseSettings
 from functools import lru_cache
 
-// setting up the contract
+# setting up the contract
 
 class Settings(BaseSettings):
     database_url: str
