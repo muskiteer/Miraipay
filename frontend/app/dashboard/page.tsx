@@ -1,5 +1,7 @@
 "use client";
 
+// main page
+
 import { useState, useEffect } from "react";
 import { getStoredUser } from "@/lib/auth";
 import api from "@/lib/api";
