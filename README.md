@@ -173,11 +173,7 @@ NEXT_PUBLIC_API_URL=http://localhost:8000
 
 **Admin:**
 - Email: vansh@gmail.com
-- Password: test123
-
-**Regular User:**
-- Email: demo@stabletool.com
-- Password: test123
+- Password: 12345678
 
 ---
 
